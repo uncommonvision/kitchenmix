@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+  },
+  "model": "gpt-oss:120b-cloud",
+  "permission": {
+    "git commit": "ask",
+    "git push": "ask"
+  },
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (remote)",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "gpt-oss:120b-cloud": {
+          "name": "gpt-oss:120b-cloud"
+        },
+        "minimax-m2:cloud": {
+          "name": "minimax-m2:cloud"
+        },
+        "qwen3-coder:480b-cloud": {
+          "name": "qwen3-coder:480b-cloud"
+        }
+      }
+    }
+  }
+}
