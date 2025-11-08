@@ -1,79 +1,42 @@
-import { InputGroup, InputGroupAddon, InputGroupText, InputGroupInput, InputGroupButton } from '@/components/ui/input-group'
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton } from '@/components/ui/input-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { CircleCheck, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 
 interface RecipeUrlFormProps {
-  recipeUrl: string;
-  setRecipeUrl: (url: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (recipeUrl: string, e: React.FormEvent) => void;
 }
 
 // URL validation function
-const isValidUrl = (url: string): boolean => {
+const isValidUrl = (url: string): boolean | null => {
+  if (url === "") return null;
   if (!url || url.trim().length === 0) return false;
-  
+  if (!url.startsWith("http://") && !url.startsWith("https://")) return false;
+
   try {
-    // Create a full URL with current protocol for validation
-    const fullUrl = `https://${url.trim()}`;
-    const urlObj = new URL(fullUrl);
-    
+    // Validate the URL as-is since it includes the protocol
+    const urlObj = new URL(url.trim());
+
+    if (urlObj.protocol != "http:" && urlObj.protocol != "https:") {
+      return false;
+    }
+
     // Check that it has a valid domain
-    return urlObj.hostname.length > 0 && 
-           urlObj.hostname.includes('.') &&
-           urlObj.hostname.split('.').pop()!.length >= 2;
+    return urlObj.hostname.length > 0 &&
+      urlObj.hostname.includes('.') &&
+      urlObj.hostname.split('.').pop()!.length >= 2;
   } catch {
     return false;
   }
 };
 
-// Helper function to clean URL by removing protocol
-const cleanUrl = (url: string, protocol: "https://" | "http://"): string => {
-  return url.replace(protocol, '').trim();
-};
-
-export default function RecipeUrlForm({
-  recipeUrl,
-  setRecipeUrl,
-  onSubmit,
-}: RecipeUrlFormProps) {
-  const [isValid, setIsValid] = useState(false);
-  const [hasInput, setHasInput] = useState(false);
-  const [protocol, setProtocol] = useState<"https://" | "http://">("https://");
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setRecipeUrl(value);
-    setHasInput(value.length > 0);
-    setIsValid(isValidUrl(value));
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const pastedText = e.clipboardData.getData('text');
-    
-    if (pastedText.startsWith('https://')) {
-      setProtocol('https://');
-      const cleanedUrl = cleanUrl(pastedText, 'https://');
-      setRecipeUrl(cleanedUrl);
-      setHasInput(cleanedUrl.length > 0);
-      setIsValid(isValidUrl(cleanedUrl));
-    } else if (pastedText.startsWith('http://')) {
-      setProtocol('http://');
-      const cleanedUrl = cleanUrl(pastedText, 'http://');
-      setRecipeUrl(cleanedUrl);
-      setHasInput(cleanedUrl.length > 0);
-      setIsValid(isValidUrl(cleanedUrl));
-    } else {
-      // No protocol, keep current protocol
-      setRecipeUrl(pastedText);
-      setHasInput(pastedText.length > 0);
-      setIsValid(isValidUrl(pastedText));
-    }
-  };
+export default function RecipeUrlForm({ onSubmit }: RecipeUrlFormProps) {
+  const [isValid, setIsValid] = useState<boolean | null>(null);
+  const [url, setUrl] = useState<string>("");
 
   const getValidationIcon = () => {
-    if (!hasInput) return null;
+    if (isValid == null) return null;
+
     return isValid ? (
       <CircleCheck className="text-green-500" size={16} />
     ) : (
@@ -85,19 +48,48 @@ export default function RecipeUrlForm({
     if (!hasInput) return "This is content in a tooltip.";
     return isValid ? "Valid URL format" : "Invalid URL format";
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    setUrl(value);
+    setIsValid(isValidUrl(value));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && isValid) {
+      e.preventDefault();
+      onSubmit(url, e);
+      setUrl("");
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+
+    setUrl(pastedText);
+    setIsValid(isValidUrl(pastedText)); // Validate with current protocol
+  };
+
+  const hasInput = (): boolean => {
+    return url.length > 0;
+  }
+
   return (
     <TooltipProvider>
-      <form onSubmit={onSubmit} className="my-4">
+      <div className="my-4">
         <InputGroup className="w-full">
-          <InputGroupAddon>
-            <InputGroupText>{protocol}</InputGroupText>
-          </InputGroupAddon>
+          {/* <InputGroupAddon> */}
+          {/*   <InputGroupText>{protocol}</InputGroupText> */}
+          {/* </InputGroupAddon> */}
           <InputGroupInput
-            className="!px-0 mx-0"
-            value={recipeUrl}
+            className="mx-0"
+            value={url}
             onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            placeholder="example.com/recipe"
+            placeholder="https://example.com/recipe"
+            type="url"
           />
           <InputGroupAddon align="inline-end">
             <Tooltip>
@@ -110,7 +102,7 @@ export default function RecipeUrlForm({
             </Tooltip>
           </InputGroupAddon>
         </InputGroup>
-      </form>
+      </div>
     </TooltipProvider>
   )
 }

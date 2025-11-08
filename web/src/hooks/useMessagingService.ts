@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { websocketService, handleConnectionAck, type ConnectionState } from '@/services/websocket'
-import type { WebSocketMessage, MessagePayload } from '@/types'
+import type { WebSocketMessage, MessagePayload, RecipeUrlRequestPayload, RecipeUrlRequestData } from '@/types'
 
 interface UseMessagingServiceOptions {
   uuid: string
@@ -13,6 +13,7 @@ interface UseMessagingServiceReturn {
   connectionState: ConnectionState
   error: Error | null
   sendMessage: (message: Omit<MessagePayload, 'id' | 'sentAt'>) => void
+  sendRecipeUrlRequest: (payload: Omit<RecipeUrlRequestPayload, 'id' | 'sentAt'>) => void
   onMessage: (callback: (message: WebSocketMessage) => void) => () => void
   reconnect: () => Promise<void>
   disconnect: () => void
@@ -94,6 +95,32 @@ export function useMessagingService(options: UseMessagingServiceOptions): UseMes
     websocketService.send('CHAT_MESSAGE', chatMessage)
   }
 
+  const sendRecipeUrlRequest = (payload: Omit<RecipeUrlRequestPayload, 'id' | 'sentAt'>) => {
+    if (!websocketService.isConnected()) {
+      console.error('WebSocket not connected')
+      return
+    }
+
+    const wsData: RecipeUrlRequestData = {
+      senderId: payload.sender.id,
+      senderName: payload.sender.name,
+      sessionId: payload.channel.id,
+      url: payload.url,
+    }
+
+    // const recipeSubmission: WebSocketMessage = {
+    //   type: 'RECIPE_URL_REQUEST',
+    //   payload: {
+    //     ...payload,
+    //     id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    //     sentAt: new Date().toISOString()
+    //   },
+    //   timestamp: new Date().toISOString()
+    // }
+
+    websocketService.send('RECIPE_URL_REQUEST', wsData)
+  }
+
   const onMessage = useCallback((callback: (message: WebSocketMessage) => void) => {
     const unsubscribeChatMessage = websocketService.on('CHAT_MESSAGE', (data: WebSocketMessage) => {
       try {
@@ -141,10 +168,36 @@ export function useMessagingService(options: UseMessagingServiceOptions): UseMes
       }
     })
 
+    const unsubscribeRecipeSubmission = websocketService.on('RECIPE_URL_REQUEST', (data: RecipeUrlRequestData) => {
+      try {
+        const recipeSubmissionEvent: WebSocketMessage = {
+          type: 'RECIPE_URL_REQUEST',
+          payload: {
+            id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            sender: {
+              id: data.senderId,
+              name: data.senderName
+            },
+            channel: {
+              id: data.sessionId,
+              name: 'General'
+            },
+            url: data.url,
+            sentAt: new Date().toISOString()
+          },
+          timestamp: new Date().toISOString()
+        }
+        callback(recipeSubmissionEvent)
+      } catch (error) {
+        console.error('Error in recipe submission callback:', error)
+      }
+    })
+
     return () => {
       unsubscribeChatMessage()
       unsubscribeUserJoined()
       unsubscribeUserLeft()
+      unsubscribeRecipeSubmission()
     }
   }, [])
 
@@ -153,6 +206,7 @@ export function useMessagingService(options: UseMessagingServiceOptions): UseMes
     connectionState,
     error,
     sendMessage,
+    sendRecipeUrlRequest,
     onMessage,
     reconnect,
     disconnect

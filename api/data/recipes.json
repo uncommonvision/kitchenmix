@@ -1,0 +1,184 @@
+{
+  "recipes": [
+    {
+      "id": "67de2d75-5c36-43e5-81e2-405d8827dca8",
+      "name": "Meera Sodha’s recipe for barbecue tempeh rice bowl with lime and sriracha sauce",
+      "url": "https://www.theguardian.com/food/2025/aug/30/barbecue-tempeh-rice-bowl-with-lime-sriracha-sauce-recipe-meera-sodha",
+      "ingredients": [
+        {
+          "name": "sushi rice",
+          "quantity": "350",
+          "unit": "gram"
+        },
+        {
+          "name": "sushi seasoning",
+          "quantity": "5",
+          "unit": "tbsp"
+        },
+        {
+          "name": "red cabbage",
+          "quantity": "250",
+          "unit": "gram"
+        },
+        {
+          "name": "lime juice",
+          "quantity": "2",
+          "unit": "tbsp"
+        },
+        {
+          "name": "sea salt",
+          "quantity": null,
+          "unit": null
+        },
+        {
+          "name": "edamame beans",
+          "quantity": "160",
+          "unit": "gram"
+        },
+        {
+          "name": "black sesame seeds",
+          "quantity": null,
+          "unit": null
+        }
+      ]
+    },
+    {
+      "id": "spaghetti-carbonara",
+      "name": "Classic Spaghetti Carbonara",
+      "url": "https://example.com/spaghetti-carbonara",
+      "ingredients": [
+        {
+          "name": "Spaghetti",
+          "quantity": "400",
+          "unit": "grams"
+        },
+        {
+          "name": "Pancetta",
+          "quantity": "200",
+          "unit": "grams"
+        },
+        {
+          "name": "Eggs",
+          "quantity": "3",
+          "unit": "large"
+        },
+        {
+          "name": "Parmesan cheese",
+          "quantity": "100",
+          "unit": "grams"
+        },
+        {
+          "name": "Black pepper",
+          "quantity": "1",
+          "unit": "teaspoon"
+        }
+      ]
+    },
+    {
+      "id": "chicken-caesar-salad",
+      "name": "Chicken Caesar Salad",
+      "url": "https://example.com/chicken-caesar-salad",
+      "ingredients": [
+        {
+          "name": "Chicken breast",
+          "quantity": "2",
+          "unit": "pieces"
+        },
+        {
+          "name": "Romaine lettuce",
+          "quantity": "1",
+          "unit": "head"
+        },
+        {
+          "name": "Caesar dressing",
+          "quantity": "100",
+          "unit": "ml"
+        },
+        {
+          "name": "Croutons",
+          "quantity": "1",
+          "unit": "cup"
+        },
+        {
+          "name": "Parmesan cheese",
+          "quantity": "50",
+          "unit": "grams"
+        }
+      ]
+    },
+    {
+      "id": "chocolate-chip-cookies",
+      "name": "Chocolate Chip Cookies",
+      "url": "https://example.com/chocolate-chip-cookies",
+      "ingredients": [
+        {
+          "name": "All-purpose flour",
+          "quantity": "250",
+          "unit": "grams"
+        },
+        {
+          "name": "Butter",
+          "quantity": "200",
+          "unit": "grams"
+        },
+        {
+          "name": "Brown sugar",
+          "quantity": "150",
+          "unit": "grams"
+        },
+        {
+          "name": "Eggs",
+          "quantity": "2",
+          "unit": "large"
+        },
+        {
+          "name": "Chocolate chips",
+          "quantity": "200",
+          "unit": "grams"
+        },
+        {
+          "name": "Vanilla extract",
+          "quantity": "1",
+          "unit": "teaspoon"
+        }
+      ]
+    },
+    {
+      "id": "vegetable-stir-fry",
+      "name": "Vegetable Stir Fry",
+      "url": "https://example.com/vegetable-stir-fry",
+      "ingredients": [
+        {
+          "name": "Mixed vegetables",
+          "quantity": "500",
+          "unit": "grams"
+        },
+        {
+          "name": "Soy sauce",
+          "quantity": "3",
+          "unit": "tablespoons"
+        },
+        {
+          "name": "Garlic",
+          "quantity": "2",
+          "unit": "cloves"
+        },
+        {
+          "name": "Ginger",
+          "quantity": "1",
+          "unit": "tablespoon"
+        },
+        {
+          "name": "Sesame oil",
+          "quantity": "1",
+          "unit": "tablespoon"
+        },
+        {
+          "name": "Rice",
+          "quantity": "200",
+          "unit": "grams"
+        }
+      ]
+    }
+  ]
+}

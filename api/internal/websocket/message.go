@@ -3,15 +3,20 @@ package websocket
 import (
 	"encoding/json"
 	"time"
+
+	"kitchenmix/api/internal/models"
 )
 
 const (
-	MessageTypeConnectionAck = "CONNECTION_ACK"
-	MessageTypePing          = "PING"
-	MessageTypeUserIdentify  = "USER_IDENTIFY"
-	MessageTypeUserJoined    = "USER_JOINED"
-	MessageTypeUserLeft      = "USER_LEFT"
-	MessageTypeChatMessage   = "CHAT_MESSAGE"
+	MessageTypeConnectionAck     = "CONNECTION_ACK"
+	MessageTypePing              = "PING"
+	MessageTypeUserIdentify      = "USER_IDENTIFY"
+	MessageTypeUserJoined        = "USER_JOINED"
+	MessageTypeUserLeft          = "USER_LEFT"
+	MessageTypeChatMessage       = "CHAT_MESSAGE"
+	MessageTypeRecipeUrlRequest  = "RECIPE_URL_REQUEST"
+	MessageTypeRecipeUrlResponse = "RECIPE_URL_RESPONSE"
+	MessageTypeRecipeProgress    = "RECIPE_PROGRESS"
 )
 
 type WSMessage struct {
@@ -48,4 +53,24 @@ type UserLeftPayload struct {
 	UserID    string `json:"userId"`
 	UserName  string `json:"userName"`
 	SessionID string `json:"sessionId"`
+}
+
+type RecipeUrlRequestPayload struct {
+	SenderID   string `json:"senderId"`
+	SenderName string `json:"senderName"`
+	SessionID  string `json:"sessionId"`
+	URL        string `json:"url"`
+}
+
+type RecipeUrlResponsePayload struct {
+	Status  string                  `json:"status"`
+	Request RecipeUrlRequestPayload `json:"request"`
+	Recipe  *models.Recipe          `json:"recipe"`
+}
+
+type RecipeProgressPayload struct {
+	Request RecipeUrlRequestPayload `json:"request"`
+	Phase   string                  `json:"phase"`
+	Status  string                  `json:"status"`
+	Message string                  `json:"message"`
 }

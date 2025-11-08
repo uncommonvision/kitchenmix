@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"aframe/api/internal/handlers"
-	"aframe/api/internal/routes"
 	"github.com/gin-gonic/gin"
+	"kitchenmix/api/internal/handlers"
+	"kitchenmix/api/internal/routes"
 )
 
 func TestHealthCheck(t *testing.T) {

@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"aframe/api/internal/handlers"
-	wsHandlers "aframe/api/internal/handlers/websocket"
-	"aframe/api/internal/middleware"
 	"github.com/gin-gonic/gin"
+	"kitchenmix/api/internal/handlers"
+	wsHandlers "kitchenmix/api/internal/handlers/websocket"
+	"kitchenmix/api/internal/middleware"
 )
 
 func Setup(router *gin.Engine) {

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"aframe/api/internal/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"kitchenmix/api/internal/routes"
 )
 
 func TestWebSocketUpgrade_Success(t *testing.T) {

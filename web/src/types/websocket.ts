@@ -5,6 +5,7 @@ export type WebSocketMessage =
   | UserJoinedEvent
   | UserLeftEvent
   | ErrorEvent
+  | RecipeUrlRequestEvent
 
 export interface MessageEvent {
   type: 'MESSAGE'
@@ -30,6 +31,12 @@ export interface ErrorEvent {
   timestamp: string
 }
 
+export interface RecipeUrlRequestEvent {
+  type: 'RECIPE_URL_REQUEST'
+  payload: RecipeUrlRequestPayload
+  timestamp: string
+}
+
 export interface MessagePayload {
   id: string
   sender: User
@@ -41,6 +48,21 @@ export interface MessagePayload {
 export interface UserEventPayload {
   user: User
   channelId: string
+}
+
+export interface RecipeUrlRequestPayload {
+  id: string
+  sender: User
+  channel: Channel
+  url: string
+  sentAt: string
+}
+
+export interface RecipeUrlRequestData {
+  senderId: string
+  senderName: string
+  sessionId: string
+  url: string
 }
 
 export interface ErrorPayload {

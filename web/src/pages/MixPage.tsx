@@ -7,13 +7,11 @@ import RecipeUrlForm from '@/components/ui/RecipeUrlForm'
 import { MessagesList } from '@/components/ui'
 import UserNameDialog from '@/components/ui/UserNameDialog'
 
-import type { ChatMessage, MessagePayload } from '@/types'
-
+import type { ChatMessage, MessagePayload, RecipeUrlRequestPayload } from '@/types'
 
 export default function MixPage() {
   const { id } = useParams<{ id: string }>()
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [recipeUrl, setRecipeUrl] = useState('');
   const { user, setUser } = useUserIdentity()
 
   // Hydrate the user from localStorage on first mount
@@ -29,7 +27,7 @@ export default function MixPage() {
   // Ensure we have a valid UUID before attempting connection
   const validUuid = id && id.trim() !== "" ? id : null
 
-  const { connectionState, error, sendMessage, onMessage, reconnect } = useMessagingService({
+  const { connectionState, error, sendMessage, sendRecipeUrlRequest, onMessage, reconnect } = useMessagingService({
     uuid: validUuid || "",
     autoConnect: !!validUuid && !!user
   });
@@ -75,6 +73,17 @@ export default function MixPage() {
           setMessages(prev => [...prev, leaveMessage])
           break
         }
+        case 'RECIPE_URL_REQUEST': {
+          const recipeMessage: ChatMessage = {
+            id: `recipe-system-${Date.now()}`,
+            text: `🍳 ${wsMessage.payload.sender.name} shared a recipe: ${wsMessage.payload.url}`,
+            sentAt: wsMessage.timestamp,
+            isSystem: true,
+            systemType: 'RECIPE_URL_REQUEST'
+          }
+          setMessages(prev => [...prev, recipeMessage])
+          break
+        }
       }
     })
 
@@ -100,7 +109,29 @@ export default function MixPage() {
     setMessages(prev => [...prev, optimisticMessage])
   }
 
-  const handleRecipeSubmit = () => {
+  const handleRecipeSubmit = (recipeUrl: string, _e: React.FormEvent) => {
+    if (!user) return;
+
+    // Create recipe submission payload
+    const recipePayload: Omit<RecipeUrlRequestPayload, 'id' | 'sentAt'> = {
+      sender: user,
+      channel: { id: 'channel-1', name: 'General' },
+      url: recipeUrl,
+    };
+
+    // Send via websocket
+    sendRecipeUrlRequest(recipePayload);
+
+    // Create optimistic message for UI
+    const optimisticMessage: ChatMessage = {
+      id: `recipe-temp-${Date.now()}`,
+      text: `Shared recipe: ${recipeUrl}`,
+      sentAt: new Date().toISOString(),
+      isSystem: true,
+      systemType: 'RECIPE_URL_REQUEST'
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
   }
 
   const handleUserNameSubmit = (name: string) => {
@@ -113,11 +144,7 @@ export default function MixPage() {
 
       <h1 className="text-3xl font-bold text-foreground mb-4">{id}</h1>
 
-      <RecipeUrlForm
-        recipeUrl={recipeUrl}
-        setRecipeUrl={setRecipeUrl}
-        onSubmit={handleRecipeSubmit}
-      />
+      <RecipeUrlForm onSubmit={handleRecipeSubmit} />
 
       <div className="flex flex-col h-full space-y-6 pb-24">
         <div>
