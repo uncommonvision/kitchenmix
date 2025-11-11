@@ -47,23 +47,26 @@ export default function MessagesList({
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-col gap-4 flex-1 min-h-0">
-        {messages.map((message) => (
-          <MessageItem
-            key={message.id}
-            message={message}
-            isCurrentUser={'sender' in message ? message.sender.id === currentUser.id : false}
-            showTimestamp={timestampsVisible}
-          />
-        ))}
+    <>
+      <div className="flex flex-col h-full">
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
+          {messages.map((message) => (
+            <MessageItem
+              key={message.id}
+              message={message}
+              isCurrentUser={'sender' in message ? message.sender.id === currentUser.id : false}
+              showTimestamp={timestampsVisible}
+            />
+          ))}
+        </div>
       </div>
+
       {showInput && onMessageSubmit && (
         <MessageSubmission
           onSubmit={onMessageSubmit}
           placeholder={inputPlaceholder}
         />
       )}
-    </div>
+    </>
   )
 }

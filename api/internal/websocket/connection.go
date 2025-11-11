@@ -101,6 +101,64 @@ func (c *Connection) WritePump() {
 	}
 }
 
+func (c *Connection) processRecipeRequest(payload RecipeUrlRequestPayload) {
+	// Define progress callback that sends messages to requesting connection only
+	progressCallback := func(phase, status, message string) {
+		progressPayload := RecipeProgressPayload{
+			Request: payload,
+			Phase:   phase,
+			Status:  status,
+			Message: message,
+		}
+
+		progressMsg, err := NewMessage(MessageTypeRecipeProgress, progressPayload)
+		if err != nil {
+			log.Printf("Failed to create progress message: %v", err)
+			return
+		}
+
+		// Send to requesting connection only
+		Pool.BroadcastToUUIDOnlySender(c.UUID, c.ID, progressMsg)
+	}
+
+	// Get recipe using the recipe service with progress updates
+	recipe, err := recipeService.GetRecipeByURL(payload.URL, progressCallback)
+	if err != nil {
+		log.Printf("Failed to get recipe for URL %s from connection %s: %v", payload.URL, c.ID, err)
+		// Create error response
+		responsePayload := RecipeUrlResponsePayload{
+			Status:  "ERROR_SERVICE_UNAVAILABLE",
+			Request: payload,
+			Recipe:  nil,
+		}
+
+		responseMsg, err := NewMessage(MessageTypeRecipeUrlResponse, responsePayload)
+		if err != nil {
+			log.Printf("Failed to create RECIPE_URL_RESPONSE message: %v", err)
+		} else {
+			Pool.BroadcastToUUID(c.UUID, responseMsg)
+		}
+		return
+	}
+
+	// Create successful response
+	responsePayload := RecipeUrlResponsePayload{
+		Status:  "RECIPE_FOUND",
+		Request: payload,
+		Recipe:  recipe,
+	}
+
+	responseMsg, err := NewMessage(MessageTypeRecipeUrlResponse, responsePayload)
+	if err != nil {
+		log.Printf("Failed to create RECIPE_URL_RESPONSE message: %v", err)
+		return
+	}
+
+	// Broadcast to all connections in the same session (including sender)
+	Pool.BroadcastToUUID(c.UUID, responseMsg)
+	log.Printf("Broadcasted RECIPE_URL_RESPONSE for URL %s to session %s", payload.URL, c.UUID)
+}
+
 func (c *Connection) handleMessage(msg WSMessage) {
 	switch msg.Type {
 	case MessageTypePing:
@@ -156,61 +214,9 @@ func (c *Connection) handleMessage(msg WSMessage) {
 
 		log.Printf("Received RECIPE_URL_REQUEST from %s (session: %s): %s", c.UserName, c.UUID, payload.URL)
 
-		// Define progress callback that sends messages to requesting connection only
-		progressCallback := func(phase, status, message string) {
-			progressPayload := RecipeProgressPayload{
-				Request: payload,
-				Phase:   phase,
-				Status:  status,
-				Message: message,
-			}
-
-			progressMsg, err := NewMessage(MessageTypeRecipeProgress, progressPayload)
-			if err != nil {
-				log.Printf("Failed to create progress message: %v", err)
-				return
-			}
-
-			// Send to requesting connection only
-			Pool.BroadcastToUUID(c.UUID, progressMsg)
-		}
-
-		// Get recipe using the recipe service with progress updates
-		recipe, err := recipeService.GetRecipeByURL(payload.URL, progressCallback)
-		if err != nil {
-			log.Printf("Failed to get recipe for URL %s from connection %s: %v", payload.URL, c.ID, err)
-			// Create error response
-			responsePayload := RecipeUrlResponsePayload{
-				Status:  "ERROR_SERVICE_UNAVAILABLE",
-				Request: payload,
-				Recipe:  nil,
-			}
-
-			responseMsg, err := NewMessage(MessageTypeRecipeUrlResponse, responsePayload)
-			if err != nil {
-				log.Printf("Failed to create RECIPE_URL_RESPONSE message: %v", err)
-			} else {
-				Pool.BroadcastToUUID(c.UUID, responseMsg)
-			}
-			return
-		}
-
-		// Create successful response
-		responsePayload := RecipeUrlResponsePayload{
-			Status:  "RECIPE_FOUND",
-			Request: payload,
-			Recipe:  recipe,
-		}
-
-		responseMsg, err := NewMessage(MessageTypeRecipeUrlResponse, responsePayload)
-		if err != nil {
-			log.Printf("Failed to create RECIPE_URL_RESPONSE message: %v", err)
-			return
-		}
-
-		// Broadcast to all connections in the same session (including sender)
-		Pool.BroadcastToUUID(c.UUID, responseMsg)
-		log.Printf("Broadcasted RECIPE_URL_RESPONSE for URL %s to session %s", payload.URL, c.UUID)
+		// Process recipe in a separate goroutine to avoid blocking ReadPump
+		// This ensures the connection can continue processing pongs and other messages
+		go c.processRecipeRequest(payload)
 	default:
 		log.Printf("Unknown message type from connection %s: %s", c.ID, msg.Type)
 	}

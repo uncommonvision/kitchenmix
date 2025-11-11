@@ -6,6 +6,8 @@ export type WebSocketMessage =
   | UserLeftEvent
   | ErrorEvent
   | RecipeUrlRequestEvent
+  | RecipeUrlResponseEvent
+  | RecipeProgressEvent
 
 export interface MessageEvent {
   type: 'MESSAGE'
@@ -29,6 +31,11 @@ export interface ErrorEvent {
   type: 'ERROR'
   payload: ErrorPayload
   timestamp: string
+}
+
+export interface ErrorPayload {
+  message: string
+  code?: string
 }
 
 export interface RecipeUrlRequestEvent {
@@ -65,7 +72,49 @@ export interface RecipeUrlRequestData {
   url: string
 }
 
-export interface ErrorPayload {
+export interface RecipeUrlResponseEvent {
+  type: 'RECIPE_URL_RESPONSE'
+  payload: RecipeUrlResponsePayload
+  timestamp: string
+}
+
+export interface RecipeUrlResponsePayload {
+  status: string
+  request: RecipeUrlRequestPayload
+  recipe: Recipe | null
+}
+
+export interface Recipe {
+  id: string
+  name: string
+  url: string
+  ingredients: Ingredient[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Ingredient {
+  name: string
+  groceryItem?: GroceryItem | null
+  quantity?: string | null
+  unit?: string | null
+}
+
+export interface GroceryItem {
+  id: string
+  name: string
+  category: string
+}
+
+export interface RecipeProgressEvent {
+  type: 'RECIPE_PROGRESS'
+  payload: RecipeProgressPayload
+  timestamp: string
+}
+
+export interface RecipeProgressPayload {
+  request: RecipeUrlRequestPayload
+  phase: string
+  status: string
   message: string
-  code?: string
 }

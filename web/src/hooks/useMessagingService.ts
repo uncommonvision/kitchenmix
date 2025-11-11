@@ -193,11 +193,74 @@ export function useMessagingService(options: UseMessagingServiceOptions): UseMes
       }
     })
 
+    const unsubscribeRecipeProgress = websocketService.on('RECIPE_PROGRESS', (data: any) => {
+      try {
+        // Transform backend's flat structure to frontend's nested structure
+        const recipeProgressEvent: WebSocketMessage = {
+          type: 'RECIPE_PROGRESS',
+          payload: {
+            request: {
+              id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              sender: {
+                id: data.request.senderId,
+                name: data.request.senderName
+              },
+              channel: {
+                id: data.request.sessionId,
+                name: 'General'
+              },
+              url: data.request.url,
+              sentAt: new Date().toISOString()
+            },
+            phase: data.phase,
+            status: data.status,
+            message: data.message
+          },
+          timestamp: new Date().toISOString()
+        }
+        callback(recipeProgressEvent)
+      } catch (error) {
+        console.error('Error in recipe progress callback:', error)
+      }
+    })
+
+    const unsubscribeRecipeResponse = websocketService.on('RECIPE_URL_RESPONSE', (data: any) => {
+      try {
+        // Transform backend's flat structure to frontend's nested structure
+        const recipeResponseEvent: WebSocketMessage = {
+          type: 'RECIPE_URL_RESPONSE',
+          payload: {
+            status: data.status,
+            request: {
+              id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              sender: {
+                id: data.request.senderId,
+                name: data.request.senderName
+              },
+              channel: {
+                id: data.request.sessionId,
+                name: 'General'
+              },
+              url: data.request.url,
+              sentAt: new Date().toISOString()
+            },
+            recipe: data.recipe
+          },
+          timestamp: new Date().toISOString()
+        }
+        callback(recipeResponseEvent)
+      } catch (error) {
+        console.error('Error in recipe response callback:', error)
+      }
+    })
+
     return () => {
       unsubscribeChatMessage()
       unsubscribeUserJoined()
       unsubscribeUserLeft()
       unsubscribeRecipeSubmission()
+      unsubscribeRecipeProgress()
+      unsubscribeRecipeResponse()
     }
   }, [])
 

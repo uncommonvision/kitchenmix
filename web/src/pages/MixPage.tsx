@@ -12,6 +12,8 @@ import type { ChatMessage, MessagePayload, RecipeUrlRequestPayload } from '@/typ
 export default function MixPage() {
   const { id } = useParams<{ id: string }>()
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [recipeLoading, setRecipeLoading] = useState(false);
+  const [recipeProgressMessage, setRecipeProgressMessage] = useState('');
   const { user, setUser } = useUserIdentity()
 
   // Hydrate the user from localStorage on first mount
@@ -73,16 +75,26 @@ export default function MixPage() {
           setMessages(prev => [...prev, leaveMessage])
           break
         }
-        case 'RECIPE_URL_REQUEST': {
-          const recipeMessage: ChatMessage = {
-            id: `recipe-system-${Date.now()}`,
-            text: `🍳 ${wsMessage.payload.sender.name} shared a recipe: ${wsMessage.payload.url}`,
+        case 'RECIPE_PROGRESS': {
+          // Update progress message displayed below the input
+          setRecipeProgressMessage(wsMessage.payload.message);
+          break;
+        }
+        case 'RECIPE_URL_RESPONSE': {
+          // Recipe processing finished – clear loading state and progress message
+          setRecipeLoading(false);
+          setRecipeProgressMessage('');
+
+          // Add notification message about the successfully processed recipe
+          const recipeNotification: ChatMessage = {
+            id: `recipe-response-${Date.now()}`,
+            text: `🍳 ${wsMessage.payload.request.sender.name} shared a recipe: ${wsMessage.payload.request.url}`,
             sentAt: wsMessage.timestamp,
             isSystem: true,
             systemType: 'RECIPE_URL_REQUEST'
-          }
-          setMessages(prev => [...prev, recipeMessage])
-          break
+          };
+          setMessages(prev => [...prev, recipeNotification]);
+          break;
         }
       }
     })
@@ -112,6 +124,10 @@ export default function MixPage() {
   const handleRecipeSubmit = (recipeUrl: string, _e: React.FormEvent) => {
     if (!user) return;
 
+    // Set loading state when submitting
+    setRecipeLoading(true);
+    setRecipeProgressMessage('');
+
     // Create recipe submission payload
     const recipePayload: Omit<RecipeUrlRequestPayload, 'id' | 'sentAt'> = {
       sender: user,
@@ -121,17 +137,6 @@ export default function MixPage() {
 
     // Send via websocket
     sendRecipeUrlRequest(recipePayload);
-
-    // Create optimistic message for UI
-    const optimisticMessage: ChatMessage = {
-      id: `recipe-temp-${Date.now()}`,
-      text: `Shared recipe: ${recipeUrl}`,
-      sentAt: new Date().toISOString(),
-      isSystem: true,
-      systemType: 'RECIPE_URL_REQUEST'
-    };
-
-    setMessages(prev => [...prev, optimisticMessage]);
   }
 
   const handleUserNameSubmit = (name: string) => {
@@ -142,9 +147,42 @@ export default function MixPage() {
     <MixLayout>
       <UserNameDialog open={!user} onSubmit={handleUserNameSubmit} />
 
+      {validUuid && user && (
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs text-muted-foreground">
+            Signed in as <span className="font-medium text-foreground">{user.name}</span>
+          </span>
+          <span className="text-xs text-muted-foreground">•</span>
+          <div className={`w-2 h-2 rounded-full ${connectionState === 'connected' ? 'bg-green-500' :
+            connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+              'bg-red-500'
+            }`} />
+          <span className="text-xs text-muted-foreground capitalize">
+            {connectionState.replace('_', ' ')}
+          </span>
+          {error && (
+            <span className="text-xs text-red-500">
+              Error: {error.message}
+            </span>
+          )}
+          {connectionState === 'error' && (
+            <button
+              onClick={reconnect}
+              className="text-xs text-blue-500 hover:text-blue-700 underline"
+            >
+              Retry
+            </button>
+          )}
+        </div>
+      )}
+
       <h1 className="text-3xl font-bold text-foreground mb-4">{id}</h1>
 
-      <RecipeUrlForm onSubmit={handleRecipeSubmit} />
+      <RecipeUrlForm
+        onSubmit={handleRecipeSubmit}
+        isLoading={recipeLoading}
+        progressMessage={recipeProgressMessage}
+      />
 
       <div className="flex flex-col h-full space-y-6 pb-24">
         <div>
@@ -156,46 +194,20 @@ export default function MixPage() {
               </p>
             </div>
           )}
-          {validUuid && user && (
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs text-muted-foreground">
-                Signed in as <span className="font-medium text-foreground">{user.name}</span>
-              </span>
-              <span className="text-xs text-muted-foreground">•</span>
-              <div className={`w-2 h-2 rounded-full ${connectionState === 'connected' ? 'bg-green-500' :
-                connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                  'bg-red-500'
-                }`} />
-              <span className="text-xs text-muted-foreground capitalize">
-                {connectionState.replace('_', ' ')}
-              </span>
-              {error && (
-                <span className="text-xs text-red-500">
-                  Error: {error.message}
-                </span>
-              )}
-              {connectionState === 'error' && (
-                <button
-                  onClick={reconnect}
-                  className="text-xs text-blue-500 hover:text-blue-700 underline"
-                >
-                  Retry
-                </button>
-              )}
-            </div>
-          )}
-        </div>
 
-        {user && (
-          <MessagesList
-            messages={messages}
-            currentUser={user}
-            showInput={true}
-            onMessageSubmit={handleMessageSubmit}
-            inputPlaceholder="Type a message..."
-          />
-        )}
+        </div>
       </div>
+
+
+      {user && (
+        <MessagesList
+          messages={messages}
+          currentUser={user}
+          showInput={true}
+          onMessageSubmit={handleMessageSubmit}
+          inputPlaceholder="Type a message..."
+        />
+      )}
     </MixLayout>
   )
 }

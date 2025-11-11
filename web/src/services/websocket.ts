@@ -6,6 +6,8 @@ export type WSMessageType =
   | 'USER_LEFT'
   | 'CHAT_MESSAGE'
   | 'RECIPE_URL_REQUEST'
+  | 'RECIPE_PROGRESS'
+  | 'RECIPE_URL_RESPONSE'
 
 export interface ConnectionAckData {
   id: string

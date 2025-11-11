@@ -1,10 +1,12 @@
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton } from '@/components/ui/input-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { CircleCheck, TriangleAlert } from 'lucide-react'
+import { CircleCheck, TriangleAlert, LoaderPinwheel } from 'lucide-react'
 import { useState } from 'react'
 
 interface RecipeUrlFormProps {
   onSubmit: (recipeUrl: string, e: React.FormEvent) => void;
+  isLoading?: boolean;
+  progressMessage?: string;
 }
 
 // URL validation function
@@ -30,11 +32,20 @@ const isValidUrl = (url: string): boolean | null => {
   }
 };
 
-export default function RecipeUrlForm({ onSubmit }: RecipeUrlFormProps) {
+export default function RecipeUrlForm({ 
+  onSubmit, 
+  isLoading = false,
+  progressMessage = ''
+}: RecipeUrlFormProps) {
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [url, setUrl] = useState<string>("");
 
   const getValidationIcon = () => {
+    // Show loader when loading
+    if (isLoading) {
+      return <LoaderPinwheel className="text-blue-500 animate-spin" size={16} />
+    }
+    
     if (isValid == null) return null;
 
     return isValid ? (
@@ -45,6 +56,7 @@ export default function RecipeUrlForm({ onSubmit }: RecipeUrlFormProps) {
   };
 
   const getValidationTooltip = () => {
+    if (isLoading) return "Processing recipe...";
     if (!hasInput) return "This is content in a tooltip.";
     return isValid ? "Valid URL format" : "Invalid URL format";
   };
@@ -56,7 +68,7 @@ export default function RecipeUrlForm({ onSubmit }: RecipeUrlFormProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && isValid) {
+    if (e.key === 'Enter' && isValid && !isLoading) {
       e.preventDefault();
       onSubmit(url, e);
       setUrl("");
@@ -90,6 +102,7 @@ export default function RecipeUrlForm({ onSubmit }: RecipeUrlFormProps) {
             onPaste={handlePaste}
             placeholder="https://example.com/recipe"
             type="url"
+            disabled={isLoading}
           />
           <InputGroupAddon align="inline-end">
             <Tooltip>
@@ -102,6 +115,13 @@ export default function RecipeUrlForm({ onSubmit }: RecipeUrlFormProps) {
             </Tooltip>
           </InputGroupAddon>
         </InputGroup>
+        
+        {/* Progress message display */}
+        {progressMessage && (
+          <div className="mt-2 text-sm text-muted-foreground animate-pulse">
+            {progressMessage}
+          </div>
+        )}
       </div>
     </TooltipProvider>
   )

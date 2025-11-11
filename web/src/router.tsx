@@ -12,7 +12,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to={`/${uuidv4()}`} replace />
+        element: <Navigate to={`/mixes/${uuidv4()}`} replace />
       },
       {
         path: 'home',

@@ -97,8 +97,16 @@ api-test: api-test-deps
 	fi
 	@set -a && . ./env/api.test.env && set +a && cd api && gotestsum --format testname -- ./...
 
+# ==== BROWSER targets ============================================
+.PHONY: browser-down browser-up
+browser-up:
+	docker compose up --build browser
+
+browser-down:
+	docker compose down browser
+
 # ==== WEB (frontend) targets =====================================
-.PHONY: web-clean web-clean web-deps web-dev web-dev+ web-preview web-test
+.PHONY: web-clean web-deps web-dev web-dev+ web-preview web-test
 
 web-build: web-deps
 	@set -a && . ./env/web.prod.env && set +a && cd web && $(BUN_RUN) build

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocolly/colly/v2"
 	"github.com/ollama/ollama/api"
 )
 
@@ -104,8 +103,8 @@ func (s *RecipeService) extractRecipeFromURL(url string, progressCallback func(s
 		progressCallback("fetching", "in_progress", fmt.Sprintf("Fetching content from %s", url))
 	}
 
-	// Fetch web content
-	htmlContent, err := s.fetchWebContent(url)
+	// Fetch web content (already optimized with content extraction)
+	content, err := s.fetchWebContent(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch web content: %w", err)
 	}
@@ -115,13 +114,32 @@ func (s *RecipeService) extractRecipeFromURL(url string, progressCallback func(s
 		progressCallback("fetching", "completed", "Content retrieved successfully")
 	}
 
+	log.Printf("content: %+v", content)
+
+	// // Try to parse as JSON-LD first (if content looks like JSON)
+	// if strings.HasPrefix(strings.TrimSpace(content), "{") || strings.HasPrefix(strings.TrimSpace(content), "[") {
+	// 	if recipe, err := s.parseJSONLDRecipe(content, url); err == nil {
+	// 		if progressCallback != nil {
+	// 			progressCallback("extracting", "completed", fmt.Sprintf("Extracted from JSON-LD schema with %d ingredients", len(recipe.Ingredients)))
+	// 		}
+	// 		if progressCallback != nil {
+	// 			progressCallback("complete", "completed", "Recipe processed successfully")
+	// 		}
+	// 		// Cache the extracted recipe
+	// 		s.recipeStore[url] = recipe
+	// 		return recipe, nil
+	// 	}
+	// 	// If JSON-LD parsing fails, fall through to AI extraction
+	// 	log.Printf("JSON-LD parsing failed, falling back to AI extraction")
+	// }
+
 	// Send progress update that we're starting AI extraction
 	if progressCallback != nil {
 		progressCallback("extracting", "in_progress", "Extracting ingredients with AI...")
 	}
 
 	// Extract recipe using AI
-	recipe, err := s.extractRecipe(htmlContent, url)
+	recipe, err := s.extractRecipe(content, url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract recipe: %w", err)
 	}
@@ -144,20 +162,7 @@ func (s *RecipeService) extractRecipeFromURL(url string, progressCallback func(s
 
 // fetchWebContent scrapes the given URL and returns the HTML content
 func (s *RecipeService) fetchWebContent(url string) (string, error) {
-	c := colly.NewCollector()
-
-	var htmlContent string
-
-	c.OnScraped(func(r *colly.Response) {
-		htmlContent = string(r.Body)
-	})
-
-	err := c.Visit(url)
-	if err != nil {
-		return "", fmt.Errorf("failed to visit URL: %w", err)
-	}
-
-	return htmlContent, nil
+	return getPageHTML(url)
 }
 
 // createExtractionPrompt creates the prompt for AI recipe extraction
@@ -189,6 +194,7 @@ RULES:
 - Ignore non-ingredient content like instructions
 - If no ingredients found, return empty array
 - Be precise with ingredient names (e.g., "olive oil" not just "oil")
+- If there is a range of quantity, pick the larger of sizes
 
 HTML CONTENT:
 %s
@@ -274,4 +280,174 @@ func (s *RecipeService) convertToRecipe(resp *OllamaRecipeResponse, url string) 
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
+}
+
+// parseJSONLDRecipe parses JSON-LD schema and extracts recipe data
+// Handles 3 formats: array, object with @graph, and direct Recipe object
+func (s *RecipeService) parseJSONLDRecipe(jsonLD string, url string) (*models.Recipe, error) {
+	// Try parsing as array first (Guardian, AllRecipes format)
+	var dataArray []interface{}
+	if err := json.Unmarshal([]byte(jsonLD), &dataArray); err == nil {
+		for _, item := range dataArray {
+			if itemMap, ok := item.(map[string]interface{}); ok {
+				// Check if @type is "Recipe" or contains "Recipe" in array
+				if s.isRecipeType(itemMap["@type"]) {
+					return s.extractRecipeFromJSONLD(itemMap, url)
+				}
+			}
+		}
+	}
+
+	// Try parsing as object
+	var dataObj map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonLD), &dataObj); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON-LD: %w", err)
+	}
+
+	// Check if it has @graph (RecipeTinEats, BBC format)
+	if graph, ok := dataObj["@graph"].([]interface{}); ok {
+		for _, item := range graph {
+			if itemMap, ok := item.(map[string]interface{}); ok {
+				if s.isRecipeType(itemMap["@type"]) {
+					return s.extractRecipeFromJSONLD(itemMap, url)
+				}
+			}
+		}
+	}
+
+	// Check if it's a direct Recipe object (Gordon Ramsay format)
+	if s.isRecipeType(dataObj["@type"]) {
+		return s.extractRecipeFromJSONLD(dataObj, url)
+	}
+
+	return nil, fmt.Errorf("no Recipe object found in JSON-LD")
+}
+
+// isRecipeType checks if the @type field contains "Recipe"
+// Handles: "Recipe", ["Recipe"], ["Recipe", "NewsArticle"], etc.
+func (s *RecipeService) isRecipeType(typeField interface{}) bool {
+	switch v := typeField.(type) {
+	case string:
+		return v == "Recipe"
+	case []interface{}:
+		for _, t := range v {
+			if str, ok := t.(string); ok && str == "Recipe" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// extractRecipeFromJSONLD extracts recipe data from a JSON-LD Recipe object
+func (s *RecipeService) extractRecipeFromJSONLD(recipeData map[string]interface{}, url string) (*models.Recipe, error) {
+	// Extract recipe name
+	name, _ := recipeData["name"].(string)
+	if name == "" {
+		return nil, fmt.Errorf("recipe name not found in JSON-LD")
+	}
+
+	// Extract ingredients
+	var ingredients []models.Ingredient
+	if ingredientsRaw, ok := recipeData["recipeIngredient"].([]interface{}); ok {
+		for _, ingRaw := range ingredientsRaw {
+			if ingStr, ok := ingRaw.(string); ok {
+				// Parse ingredient string (e.g., "2 cups flour" or "350g sushi rice")
+				ingredient := s.parseIngredientString(ingStr)
+				ingredients = append(ingredients, ingredient)
+			}
+		}
+	}
+
+	if len(ingredients) == 0 {
+		return nil, fmt.Errorf("no ingredients found in JSON-LD")
+	}
+
+	log.Printf("Extracted recipe from JSON-LD: %s with %d ingredients", name, len(ingredients))
+
+	now := time.Now()
+	return &models.Recipe{
+		Name:        name,
+		URL:         url,
+		Ingredients: ingredients,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}, nil
+}
+
+// parseIngredientString parses an ingredient string into structured data
+// Examples: "2 cups flour", "350g sushi rice", "Fine sea salt"
+func (s *RecipeService) parseIngredientString(ingredientStr string) models.Ingredient {
+	// This is a simple parser - could be enhanced with more sophisticated parsing
+	parts := strings.Fields(strings.TrimSpace(ingredientStr))
+
+	if len(parts) == 0 {
+		return models.Ingredient{Name: ingredientStr}
+	}
+
+	// Try to detect quantity and unit patterns
+	// Pattern 1: "2 cups flour" or "350g rice"
+	if len(parts) >= 2 {
+		// Check if first part looks like a quantity (number or number with unit)
+		firstPart := parts[0]
+
+		// Check for patterns like "350g", "2tbsp", "1.5tsp"
+		if hasNumberPrefix(firstPart) {
+			quantity, unit := splitQuantityUnit(firstPart)
+			if quantity != "" {
+				name := strings.Join(parts[1:], " ")
+				return models.Ingredient{
+					Name:     name,
+					Quantity: &quantity,
+					Unit:     &unit,
+				}
+			}
+		}
+
+		// Check for patterns like "2 cups flour"
+		if isNumeric(firstPart) && len(parts) >= 3 {
+			quantity := firstPart
+			unit := parts[1]
+			name := strings.Join(parts[2:], " ")
+			return models.Ingredient{
+				Name:     name,
+				Quantity: &quantity,
+				Unit:     &unit,
+			}
+		}
+	}
+
+	// If no quantity/unit detected, use the whole string as name
+	return models.Ingredient{Name: ingredientStr}
+}
+
+// hasNumberPrefix checks if a string starts with a number
+func hasNumberPrefix(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	c := s[0]
+	return (c >= '0' && c <= '9') || c == '.'
+}
+
+// isNumeric checks if a string is a number
+func isNumeric(s string) bool {
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || c == '.' || c == '-') {
+			return false
+		}
+	}
+	return len(s) > 0
+}
+
+// splitQuantityUnit splits "350g" into "350" and "g"
+func splitQuantityUnit(s string) (quantity, unit string) {
+	i := 0
+	for i < len(s) && (s[i] >= '0' && s[i] <= '9' || s[i] == '.' || s[i] == '-') {
+		i++
+	}
+	if i > 0 && i < len(s) {
+		return s[:i], s[i:]
+	}
+	return "", ""
 }
