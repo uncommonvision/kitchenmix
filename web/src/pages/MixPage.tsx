@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useMessagingService } from '@/hooks/useMessagingService'
 import { useUserIdentity } from '@/hooks/useUserIdentity'
+import { useToastService } from '@/services/toastService'
 import { MixLayout } from "@/components/layout"
 import { useEffect, useState } from 'react'
 import RecipeUrlForm from '@/components/ui/RecipeUrlForm'
@@ -15,6 +16,7 @@ export default function MixPage() {
   const [recipeLoading, setRecipeLoading] = useState(false);
   const [recipeProgressMessage, setRecipeProgressMessage] = useState('');
   const { user, setUser } = useUserIdentity()
+  const toastService = useToastService()
 
   // Hydrate the user from localStorage on first mount
   useEffect(() => {
@@ -54,6 +56,10 @@ export default function MixPage() {
           setMessages(prev => [...prev, wsMessage.payload])
           break
         case 'USER_JOINED': {
+          // Show toast notification for user joined
+          toastService.showUserJoined(wsMessage.payload.user.name)
+          
+          // Still add to message history for reference
           const joinMessage: ChatMessage = {
             id: `system-${Date.now()}`,
             text: `${wsMessage.payload.user.name} joined the chat`,
@@ -65,6 +71,10 @@ export default function MixPage() {
           break
         }
         case 'USER_LEFT': {
+          // Show toast notification for user left
+          toastService.showUserLeft(wsMessage.payload.user.name)
+          
+          // Still add to message history for reference
           const leaveMessage: ChatMessage = {
             id: `system-${Date.now()}`,
             text: `${wsMessage.payload.user.name} left the chat`,
@@ -76,6 +86,9 @@ export default function MixPage() {
           break
         }
         case 'RECIPE_PROGRESS': {
+          // Show toast notification for recipe progress
+          toastService.showRecipeProgress(wsMessage.payload.phase, wsMessage.payload.message)
+          
           // Update progress message displayed below the input
           setRecipeProgressMessage(wsMessage.payload.message);
           break;
@@ -84,6 +97,13 @@ export default function MixPage() {
           // Recipe processing finished – clear loading state and progress message
           setRecipeLoading(false);
           setRecipeProgressMessage('');
+
+          // Show toast notification based on success/error
+          if (wsMessage.payload.status === 'success' && wsMessage.payload.recipe) {
+            toastService.showRecipeSuccess(wsMessage.payload.recipe)
+          } else {
+            toastService.showRecipeError('Failed to process recipe')
+          }
 
           // Add notification message about the successfully processed recipe
           const recipeNotification: ChatMessage = {
@@ -100,7 +120,7 @@ export default function MixPage() {
     })
 
     return unsubscribe
-  }, [onMessage])
+  }, [onMessage, toastService])
 
   const handleMessageSubmit = (text: string) => {
     if (!user) return
