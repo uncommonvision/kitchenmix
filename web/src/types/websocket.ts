@@ -6,7 +6,7 @@ export type WebSocketMessage =
   | UserLeftEvent
   | ErrorEvent
   | RecipeUrlRequestEvent
-  | RecipeUrlResponseEvent
+  | RecipeAdditionsEvent
   | RecipeProgressEvent
 
 export interface MessageEvent {
@@ -72,13 +72,13 @@ export interface RecipeUrlRequestData {
   url: string
 }
 
-export interface RecipeUrlResponseEvent {
-  type: 'RECIPE_URL_RESPONSE'
-  payload: RecipeUrlResponsePayload
+export interface RecipeAdditionsEvent {
+  type: 'RECIPE_ADDITIONS'
+  payload: RecipeAdditionsPayload
   timestamp: string
 }
 
-export interface RecipeUrlResponsePayload {
+export interface RecipeAdditionsPayload {
   status: string
   request: RecipeUrlRequestPayload
   recipe: Recipe | null

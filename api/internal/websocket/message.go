@@ -8,15 +8,15 @@ import (
 )
 
 const (
-	MessageTypeConnectionAck     = "CONNECTION_ACK"
-	MessageTypePing              = "PING"
-	MessageTypeUserIdentify      = "USER_IDENTIFY"
-	MessageTypeUserJoined        = "USER_JOINED"
-	MessageTypeUserLeft          = "USER_LEFT"
-	MessageTypeChatMessage       = "CHAT_MESSAGE"
-	MessageTypeRecipeUrlRequest  = "RECIPE_URL_REQUEST"
-	MessageTypeRecipeUrlResponse = "RECIPE_URL_RESPONSE"
-	MessageTypeRecipeProgress    = "RECIPE_PROGRESS"
+	MessageTypeConnectionAck    = "CONNECTION_ACK"
+	MessageTypePing             = "PING"
+	MessageTypeUserIdentify     = "USER_IDENTIFY"
+	MessageTypeUserJoined       = "USER_JOINED"
+	MessageTypeUserLeft         = "USER_LEFT"
+	MessageTypeChatMessage      = "CHAT_MESSAGE"
+	MessageTypeRecipeUrlRequest = "RECIPE_URL_REQUEST"
+	MessageTypeRecipeAdditions  = "RECIPE_ADDITIONS"
+	MessageTypeRecipeProgress   = "RECIPE_PROGRESS"
 )
 
 type WSMessage struct {
@@ -62,7 +62,7 @@ type RecipeUrlRequestPayload struct {
 	URL        string `json:"url"`
 }
 
-type RecipeUrlResponsePayload struct {
+type RecipeAdditionsPayload struct {
 	Status  string                  `json:"status"`
 	Request RecipeUrlRequestPayload `json:"request"`
 	Recipe  *models.Recipe          `json:"recipe"`

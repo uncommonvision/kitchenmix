@@ -32,7 +32,7 @@ export default function RecipeTabWrapper({ user }: RecipeTabWrapperProps) {
           toastService.showRecipeProgress(wsMessage.payload.phase, wsMessage.payload.message)
           break;
         }
-        case 'RECIPE_URL_RESPONSE': {
+        case 'RECIPE_ADDITIONS': {
           setRecipeLoading(false)
           setLoading(false)
 

@@ -126,15 +126,15 @@ func (c *Connection) processRecipeRequest(payload RecipeUrlRequestPayload) {
 	if err != nil {
 		log.Printf("Failed to get recipe for URL %s from connection %s: %v", payload.URL, c.ID, err)
 		// Create error response
-		responsePayload := RecipeUrlResponsePayload{
+		responsePayload := RecipeAdditionsPayload{
 			Status:  "ERROR_SERVICE_UNAVAILABLE",
 			Request: payload,
 			Recipe:  nil,
 		}
 
-		responseMsg, err := NewMessage(MessageTypeRecipeUrlResponse, responsePayload)
+		responseMsg, err := NewMessage(MessageTypeRecipeAdditions, responsePayload)
 		if err != nil {
-			log.Printf("Failed to create RECIPE_URL_RESPONSE message: %v", err)
+			log.Printf("Failed to create RECIPE_ADDITIONS message: %v", err)
 		} else {
 			Pool.BroadcastToUUID(c.UUID, responseMsg)
 		}
@@ -142,21 +142,21 @@ func (c *Connection) processRecipeRequest(payload RecipeUrlRequestPayload) {
 	}
 
 	// Create successful response
-	responsePayload := RecipeUrlResponsePayload{
+	responsePayload := RecipeAdditionsPayload{
 		Status:  "success",
 		Request: payload,
 		Recipe:  recipe,
 	}
 
-	responseMsg, err := NewMessage(MessageTypeRecipeUrlResponse, responsePayload)
+	responseMsg, err := NewMessage(MessageTypeRecipeAdditions, responsePayload)
 	if err != nil {
-		log.Printf("Failed to create RECIPE_URL_RESPONSE message: %v", err)
+		log.Printf("Failed to create RECIPE_ADDITIONS message: %v", err)
 		return
 	}
 
 	// Broadcast to all connections in the same session (including sender)
 	Pool.BroadcastToUUID(c.UUID, responseMsg)
-	log.Printf("Broadcasted RECIPE_URL_RESPONSE for URL %s to session %s", payload.URL, c.UUID)
+	log.Printf("Broadcasted RECIPE_ADDITIONS to %s", c.UUID)
 }
 
 func (c *Connection) handleMessage(msg WSMessage) {

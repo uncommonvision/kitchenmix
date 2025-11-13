@@ -224,11 +224,11 @@ export function useMessagingService(options: UseMessagingServiceOptions): UseMes
       }
     })
 
-    const unsubscribeRecipeResponse = websocketService.on('RECIPE_URL_RESPONSE', (data: any) => {
+    const unsubscribeRecipeResponse = websocketService.on('RECIPE_ADDITIONS', (data: any) => {
       try {
         // Transform backend's flat structure to frontend's nested structure
         const recipeResponseEvent: WebSocketMessage = {
-          type: 'RECIPE_URL_RESPONSE',
+          type: 'RECIPE_ADDITIONS',
           payload: {
             status: data.status,
             request: {
