@@ -17,19 +17,10 @@ type RecipeService struct {
 	recipeStore map[string]*models.Recipe
 }
 
-// OllamaRecipeResponse represents the expected JSON response structure from OLLAMA
-type OllamaRecipeResponse struct {
-	Name        string              `json:"name"`
-	Ingredients []models.Ingredient `json:"ingredients"`
-}
-
 func NewRecipeService() *RecipeService {
 	service := &RecipeService{
 		recipeStore: make(map[string]*models.Recipe),
 	}
-
-	// Load recipes from JSON file (disabled for clean dynamic extraction)
-	// service.loadRecipesFromFile()
 
 	return service
 }
@@ -39,7 +30,7 @@ func (s *RecipeService) GetRecipeByURL(url string, progressCallback func(string,
 	// Check if we have it in our store
 	if recipe, exists := s.recipeStore[url]; exists {
 		if progressCallback != nil {
-			progressCallback("complete", "completed", "Recipe found in local cache")
+			progressCallback("complete", "completed", "Recipe found in cache")
 		}
 		return recipe, nil
 	}
@@ -49,7 +40,7 @@ func (s *RecipeService) GetRecipeByURL(url string, progressCallback func(string,
 	if err != nil {
 		log.Printf("Failed to extract recipe from URL %s: %v", url, err)
 		if progressCallback != nil {
-			progressCallback("complete", "error", fmt.Sprintf("Recipe not found for URL %s: %v", url, err))
+			progressCallback("error", "failed", fmt.Sprintf("Recipe not found for URL %s: %v", url, err))
 		}
 		return nil, fmt.Errorf("recipe not found for URL %s: %w", url, err)
 	}
@@ -57,50 +48,11 @@ func (s *RecipeService) GetRecipeByURL(url string, progressCallback func(string,
 	return recipe, nil
 }
 
-// loadRecipesFromFile loads recipes from the JSON data file (disabled)
-// This function is no longer used since we removed stub data loading
-/*
-func (s *RecipeService) loadRecipesFromFile() {
-	// Get the current working directory and construct the path to recipes.json
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Printf("Failed to get current working directory: %v", err)
-		return
-	}
-
-	// Navigate to the data directory within the api directory
-	recipesFile := filepath.Join(cwd, "data", "recipes.json")
-
-	// Read the JSON file
-	data, err := os.ReadFile(recipesFile)
-	if err != nil {
-		log.Printf("Failed to read recipes file: %v", err)
-		return
-	}
-
-	// Parse the JSON
-	var recipeJSON models.RecipeJSON
-	if err := json.Unmarshal(data, &recipeJSON); err != nil {
-		log.Printf("Failed to parse recipes JSON: %v", err)
-		return
-	}
-
-	// Convert JSON items to Recipe objects and store them
-	for _, recipeItem := range recipeJSON.Recipes {
-		recipe := recipeItem.ToRecipe()
-		s.recipeStore[recipe.URL] = recipe
-		log.Printf("Loaded recipe: %s (URL: %s)", recipe.Name, recipe.URL)
-	}
-
-	log.Printf("Successfully loaded %d recipes from JSON file", len(recipeJSON.Recipes))
-}
-*/
-
 // extractRecipeFromURL dynamically extracts a recipe from a given URL using web scraping and AI
 func (s *RecipeService) extractRecipeFromURL(url string, progressCallback func(string, string, string)) (*models.Recipe, error) {
 	// Send progress update that we're starting web content fetch
 	if progressCallback != nil {
-		progressCallback("fetching", "in_progress", fmt.Sprintf("Fetching content from %s", url))
+		progressCallback("fetching", "in_progress", fmt.Sprintf("Fetching recipe from %s", url))
 	}
 
 	// Fetch web content (already optimized with content extraction)
@@ -146,7 +98,7 @@ func (s *RecipeService) extractRecipeFromURL(url string, progressCallback func(s
 
 	// Send progress update that extraction is complete
 	if progressCallback != nil {
-		progressCallback("extracting", "completed", fmt.Sprintf("Found recipe with %d ingredients", len(recipe.Ingredients)))
+		progressCallback("extracting", "completed", fmt.Sprintf("Received recipe with %d ingredients", len(recipe.Ingredients)))
 	}
 
 	// Send completion progress
@@ -173,10 +125,12 @@ You are a recipe parsing AI. Extract recipe information from the following HTML 
 TASK: Parse the HTML and extract:
 1. Recipe name
 2. List of ingredients with quantities and units
+3. Best representative image URL for the recipe
 
 OUTPUT FORMAT: JSON with this exact structure:
 {
   "name": "Recipe Name",
+  "image": "primary image URL (or null if no suitable image found)",
   "ingredients": [
     {
       "name": "ingredient name",
@@ -195,6 +149,16 @@ RULES:
 - If no ingredients found, return empty array
 - Be precise with ingredient names (e.g., "olive oil" not just "oil")
 - If there is a range of quantity, pick the larger of sizes
+
+RULES FOR IMAGE EXTRACTION:
+- Find the most representative image of the final dish/recipe
+- Prefer images that show the completed recipe, not ingredients or preparation steps
+- Select the highest quality image (largest resolution/clearest)
+- Use absolute URLs (full URLs starting with http:// or https://)
+- If multiple similar images exist, pick the first high-quality one
+- If no suitable recipe image found, return null
+- Avoid logos, ads, or unrelated images
+- Prioritize images in <img> tags over background images or CSS-based images
 
 HTML CONTENT:
 %s
@@ -248,7 +212,7 @@ func (s *RecipeService) extractRecipe(htmlContent, url string) (*models.Recipe, 
 	responseText = strings.TrimSuffix(responseText, "```")
 	responseText = strings.TrimSpace(responseText)
 
-	var ollamaResp OllamaRecipeResponse
+	var ollamaResp models.OllamaRecipeResponse
 	err = json.Unmarshal([]byte(responseText), &ollamaResp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse AI response: %w. Response: %s", err, responseText)
@@ -260,7 +224,7 @@ func (s *RecipeService) extractRecipe(htmlContent, url string) (*models.Recipe, 
 }
 
 // convertToRecipe converts AI response to internal Recipe model
-func (s *RecipeService) convertToRecipe(resp *OllamaRecipeResponse, url string) *models.Recipe {
+func (s *RecipeService) convertToRecipe(resp *models.OllamaRecipeResponse, url string) *models.Recipe {
 	ingredients := make([]models.Ingredient, 0, len(resp.Ingredients))
 
 	for _, ing := range resp.Ingredients {
@@ -275,6 +239,7 @@ func (s *RecipeService) convertToRecipe(resp *OllamaRecipeResponse, url string) 
 	now := time.Now()
 	return &models.Recipe{
 		Name:        resp.Name,
+		Image:       resp.Image,
 		URL:         url,
 		Ingredients: ingredients,
 		CreatedAt:   now,

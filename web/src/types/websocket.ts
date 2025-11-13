@@ -88,6 +88,7 @@ export interface Recipe {
   id: string
   name: string
   url: string
+  image?: string | null
   ingredients: Ingredient[]
   createdAt: string
   updatedAt: string

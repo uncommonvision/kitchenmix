@@ -22,33 +22,15 @@ type Recipe struct {
 	ID          string       `json:"id"`
 	Name        string       `json:"name"`
 	URL         string       `json:"url"`
+	Image       *string      `json:"image,omitempty"`
 	Ingredients []Ingredient `json:"ingredients"`
 	CreatedAt   time.Time    `json:"createdAt"`
 	UpdatedAt   time.Time    `json:"updatedAt"`
 }
 
-// RecipeJSON represents the JSON structure in the file
-type RecipeJSON struct {
-	Recipes []RecipeJSONItem `json:"recipes"`
-}
-
-// RecipeJSONItem represents a recipe in the JSON file
-type RecipeJSONItem struct {
-	ID          string       `json:"id"`
+// OllamaRecipeResponse represents the AI response structure for recipe extraction
+type OllamaRecipeResponse struct {
 	Name        string       `json:"name"`
-	URL         string       `json:"url"`
+	Image       *string      `json:"image,omitempty"`
 	Ingredients []Ingredient `json:"ingredients"`
-}
-
-// ToRecipe converts RecipeJSONItem to Recipe with timestamps
-func (r *RecipeJSONItem) ToRecipe() *Recipe {
-	now := time.Now()
-	return &Recipe{
-		ID:          r.ID,
-		Name:        r.Name,
-		URL:         r.URL,
-		Ingredients: r.Ingredients,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
 }
