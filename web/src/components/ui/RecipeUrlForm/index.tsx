@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { InputGroupAddon, InputGroupInput, InputGroupButton } from '@/components/ui/input-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { CircleCheck, TriangleAlert, LoaderPinwheel } from 'lucide-react'
@@ -7,6 +7,7 @@ import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
 interface RecipeUrlFormProps {
   onSubmit: (recipeUrl: string, e: React.FormEvent) => void;
   isLoading?: boolean;
+  clearForm?: boolean;
 }
 
 // URL validation function
@@ -35,10 +36,19 @@ const isValidUrl = (url: string): boolean | null => {
 export default function RecipeUrlForm({
   onSubmit,
   isLoading = false,
+  clearForm = false,
 }: RecipeUrlFormProps) {
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [url, setUrl] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Handle form clearing when clearForm prop is set to true
+  useEffect(() => {
+    if (clearForm) {
+      setUrl("");
+      setIsValid(null);
+    }
+  }, [clearForm]);
 
   const getValidationIcon = () => {
     // Show loader when loading
@@ -72,7 +82,7 @@ export default function RecipeUrlForm({
     if (e.key === 'Enter' && isValid && !isLoading) {
       e.preventDefault();
       onSubmit(url, e);
-      setUrl("");
+      // Don't clear immediately - wait for processing to complete
     } else if (e.key === 'Escape') {
       e.preventDefault()
       e.currentTarget.blur()

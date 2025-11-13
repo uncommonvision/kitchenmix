@@ -18,6 +18,7 @@ export default function RecipeTabWrapper({ user }: RecipeTabWrapperProps) {
   const { addRecipe, setLoading } = useRecipeContext()
   const toastService = useToastService()
   const [recipeLoading, setRecipeLoading] = useState(false)
+  const [clearForm, setClearForm] = useState(false)
   
   const { sendRecipeUrlRequest, onMessage } = useMessagingService({
     uuid: '', // Will be handled by parent
@@ -43,6 +44,10 @@ export default function RecipeTabWrapper({ user }: RecipeTabWrapperProps) {
           } else {
             toastService.showRecipeError('Failed to process recipe')
           }
+          
+          // Clear form regardless of success or failure
+          setClearForm(true)
+          setTimeout(() => setClearForm(false), 100)
           break;
         }
       }
@@ -77,6 +82,7 @@ export default function RecipeTabWrapper({ user }: RecipeTabWrapperProps) {
       <RecipeUrlForm
         onSubmit={handleRecipeSubmit}
         isLoading={recipeLoading}
+        clearForm={clearForm}
       />
     </div>
   )
