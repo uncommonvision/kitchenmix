@@ -1,20 +1,24 @@
 import { useParams } from 'react-router-dom'
+import { ChefHat, MessageSquare, type LucideIcon } from 'lucide-react'
 import { useMessagingService } from '@/hooks/useMessagingService'
 import { useUserIdentity } from '@/hooks/useUserIdentity'
+import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
 import { useToastService } from '@/services/toastService'
 import { MixLayout } from "@/components/layout"
 import { useEffect, useState } from 'react'
-import RecipeUrlForm from '@/components/ui/RecipeUrlForm'
 import { MessagesList } from '@/components/ui'
 import UserNameDialog from '@/components/ui/UserNameDialog'
+import UserIdentityState from '@/components/ui/UserIdentityState'
+import { RecipeTabWrapper } from '@/components/RecipeCard'
 
-import type { ChatMessage, MessagePayload, RecipeUrlRequestPayload } from '@/types'
+import type { ChatMessage, MessagePayload } from '@/types'
+
+type TabType = 'messaging' | 'recipe';
 
 export default function MixPage() {
   const { id } = useParams<{ id: string }>()
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [recipeLoading, setRecipeLoading] = useState(false);
-  const [recipeProgressMessage, setRecipeProgressMessage] = useState('');
+  const [activeTab, setActiveTab] = useState<TabType>('messaging');
   const { user, setUser } = useUserIdentity()
   const toastService = useToastService()
 
@@ -26,14 +30,11 @@ export default function MixPage() {
         setUser(savedName)
       }
     } catch { }
-  }, [])
+  }, [user, setUser])
 
-  // Ensure we have a valid UUID before attempting connection
-  const validUuid = id && id.trim() !== "" ? id : null
-
-  const { connectionState, error, sendMessage, sendRecipeUrlRequest, onMessage, reconnect } = useMessagingService({
-    uuid: validUuid || "",
-    autoConnect: !!validUuid && !!user
+  const { connectionState, error, sendMessage, onMessage, reconnect } = useMessagingService({
+    uuid: id || "",
+    autoConnect: !!id && !!user
   });
 
   // Send USER_IDENTIFY message when connected
@@ -56,65 +57,12 @@ export default function MixPage() {
           setMessages(prev => [...prev, wsMessage.payload])
           break
         case 'USER_JOINED': {
-          // Show toast notification for user joined
           toastService.showUserJoined(wsMessage.payload.user.name)
-          
-          // Still add to message history for reference
-          const joinMessage: ChatMessage = {
-            id: `system-${Date.now()}`,
-            text: `${wsMessage.payload.user.name} joined the chat`,
-            sentAt: wsMessage.timestamp,
-            isSystem: true,
-            systemType: 'USER_JOINED'
-          }
-          setMessages(prev => [...prev, joinMessage])
           break
         }
         case 'USER_LEFT': {
-          // Show toast notification for user left
           toastService.showUserLeft(wsMessage.payload.user.name)
-          
-          // Still add to message history for reference
-          const leaveMessage: ChatMessage = {
-            id: `system-${Date.now()}`,
-            text: `${wsMessage.payload.user.name} left the chat`,
-            sentAt: wsMessage.timestamp,
-            isSystem: true,
-            systemType: 'USER_LEFT'
-          }
-          setMessages(prev => [...prev, leaveMessage])
           break
-        }
-        case 'RECIPE_PROGRESS': {
-          // Show toast notification for recipe progress
-          toastService.showRecipeProgress(wsMessage.payload.phase, wsMessage.payload.message)
-          
-          // Update progress message displayed below the input
-          setRecipeProgressMessage(wsMessage.payload.message);
-          break;
-        }
-        case 'RECIPE_URL_RESPONSE': {
-          // Recipe processing finished – clear loading state and progress message
-          setRecipeLoading(false);
-          setRecipeProgressMessage('');
-
-          // Show toast notification based on success/error
-          if (wsMessage.payload.status === 'success' && wsMessage.payload.recipe) {
-            toastService.showRecipeSuccess(wsMessage.payload.recipe)
-          } else {
-            toastService.showRecipeError('Failed to process recipe')
-          }
-
-          // Add notification message about the successfully processed recipe
-          const recipeNotification: ChatMessage = {
-            id: `recipe-response-${Date.now()}`,
-            text: `🍳 ${wsMessage.payload.request.sender.name} shared a recipe: ${wsMessage.payload.request.url}`,
-            sentAt: wsMessage.timestamp,
-            isSystem: true,
-            systemType: 'RECIPE_URL_REQUEST'
-          };
-          setMessages(prev => [...prev, recipeNotification]);
-          break;
         }
       }
     })
@@ -141,93 +89,79 @@ export default function MixPage() {
     setMessages(prev => [...prev, optimisticMessage])
   }
 
-  const handleRecipeSubmit = (recipeUrl: string, _e: React.FormEvent) => {
-    if (!user) return;
-
-    // Set loading state when submitting
-    setRecipeLoading(true);
-    setRecipeProgressMessage('');
-
-    // Create recipe submission payload
-    const recipePayload: Omit<RecipeUrlRequestPayload, 'id' | 'sentAt'> = {
-      sender: user,
-      channel: { id: 'channel-1', name: 'General' },
-      url: recipeUrl,
-    };
-
-    // Send via websocket
-    sendRecipeUrlRequest(recipePayload);
-  }
-
   const handleUserNameSubmit = (name: string) => {
     setUser(name)
   }
 
+  const toggleActiveTab = () => {
+    setActiveTab(activeTab === 'messaging' ? 'recipe' : 'messaging')
+  }
+
+  const TabButton = ({ icon: Icon, label, tab }: { icon: LucideIcon; label?: string; tab: TabType }) => (
+    <button
+      onClick={() => setActiveTab(tab)}
+      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === tab
+        ? 'bg-primary text-primary-foreground'
+        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+        }`}
+    >
+      <Icon className="w-4 h-4 inline" />
+      {label ? <span className="ml-2">{label}</span> : null}
+    </button>
+  )
+
+  // Tab navigation hotkeys
+  useKeydownShortcut(
+    { key: 'Tab' },
+    () => toggleActiveTab(),
+    'Toggle between Tabs',
+    'Press TAB to switch between tabs'
+  )
+
   return (
     <MixLayout>
-      <UserNameDialog open={!user} onSubmit={handleUserNameSubmit} />
+      <div className="flex flex-col flex-1 min-h-0">
+        <UserNameDialog open={!user} onSubmit={handleUserNameSubmit} />
 
-      {validUuid && user && (
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-muted-foreground">
-            Signed in as <span className="font-medium text-foreground">{user.name}</span>
-          </span>
-          <span className="text-xs text-muted-foreground">•</span>
-          <div className={`w-2 h-2 rounded-full ${connectionState === 'connected' ? 'bg-green-500' :
-            connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-              'bg-red-500'
-            }`} />
-          <span className="text-xs text-muted-foreground capitalize">
-            {connectionState.replace('_', ' ')}
-          </span>
-          {error && (
-            <span className="text-xs text-red-500">
-              Error: {error.message}
-            </span>
-          )}
-          {connectionState === 'error' && (
-            <button
-              onClick={reconnect}
-              className="text-xs text-blue-500 hover:text-blue-700 underline"
-            >
-              Retry
-            </button>
-          )}
-        </div>
-      )}
+        {/* User Identity State and Tab Navigation */}
+        {id && user && (
+          <div className="flex items-center justify-between mb-2">
+            <UserIdentityState
+              user={user}
+              mixId={id}
+              connectionState={connectionState}
+              error={error}
+              reconnect={reconnect}
+            />
 
-      <h1 className="text-3xl font-bold text-foreground mb-4">{id}</h1>
-
-      <RecipeUrlForm
-        onSubmit={handleRecipeSubmit}
-        isLoading={recipeLoading}
-        progressMessage={recipeProgressMessage}
-      />
-
-      <div className="flex flex-col h-full space-y-6 pb-24">
-        <div>
-
-          {!validUuid && (
-            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-              <p className="text-xs text-yellow-800">
-                Waiting for valid session ID...
-              </p>
+            <div className="flex gap-2">
+              <TabButton icon={MessageSquare} tab="messaging" />
+              <TabButton icon={ChefHat} tab="recipe" />
             </div>
-          )}
+          </div>
+        )}
 
-        </div>
+        {/* Tab Content */}
+        {id && user && (
+          <div className="max-h-[calc(100vh-9rem)] flex-1 overflow-hidden">
+            {activeTab === 'messaging' && (
+              <div className="h-full flex flex-col">
+                <MessagesList
+                  messages={messages}
+                  currentUser={user}
+                  showInput={true}
+                  onMessageSubmit={handleMessageSubmit}
+                  inputPlaceholder="Type a message..."
+                />
+              </div>
+            )}
+
+            {activeTab === 'recipe' && (
+              <RecipeTabWrapper user={user} />
+            )}
+          </div>
+        )}
       </div>
-
-
-      {user && (
-        <MessagesList
-          messages={messages}
-          currentUser={user}
-          showInput={true}
-          onMessageSubmit={handleMessageSubmit}
-          inputPlaceholder="Type a message..."
-        />
-      )}
     </MixLayout>
   )
 }

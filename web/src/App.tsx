@@ -1,14 +1,15 @@
 import { Outlet } from 'react-router-dom'
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
+import { RecipeProvider } from '@/contexts/RecipeContext'
 import { useDeviceDetection } from "@/hooks/useDeviceDetection"
 
 function App() {
   const isMobile = useDeviceDetection()
-  
+
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <Toaster 
+      <Toaster
         position={isMobile ? "top-center" : "bottom-right"}
         toastOptions={{
           duration: isMobile ? 3500 : 4000,
@@ -21,7 +22,9 @@ function App() {
           }
         }}
       />
-      <Outlet />
+      <RecipeProvider>
+        <Outlet />
+      </RecipeProvider>
     </ThemeProvider>
   )
 }

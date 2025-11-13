@@ -1,12 +1,12 @@
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupButton } from '@/components/ui/input-group'
+import { useRef, useState } from 'react'
+import { InputGroupAddon, InputGroupInput, InputGroupButton } from '@/components/ui/input-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { CircleCheck, TriangleAlert, LoaderPinwheel } from 'lucide-react'
-import { useState } from 'react'
+import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
 
 interface RecipeUrlFormProps {
   onSubmit: (recipeUrl: string, e: React.FormEvent) => void;
   isLoading?: boolean;
-  progressMessage?: string;
 }
 
 // URL validation function
@@ -32,20 +32,20 @@ const isValidUrl = (url: string): boolean | null => {
   }
 };
 
-export default function RecipeUrlForm({ 
-  onSubmit, 
+export default function RecipeUrlForm({
+  onSubmit,
   isLoading = false,
-  progressMessage = ''
 }: RecipeUrlFormProps) {
   const [isValid, setIsValid] = useState<boolean | null>(null);
   const [url, setUrl] = useState<string>("");
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const getValidationIcon = () => {
     // Show loader when loading
     if (isLoading) {
       return <LoaderPinwheel className="text-blue-500 animate-spin" size={16} />
     }
-    
+
     if (isValid == null) return null;
 
     return isValid ? (
@@ -55,16 +55,17 @@ export default function RecipeUrlForm({
     );
   };
 
+  useKeydownShortcut(
+    { key: 'l', ctrl: false, alt: false, shift: false, meta: false },
+    () => inputRef.current?.focus(),
+    'Focus Recipe Url Input',
+    'Focus on the recipe url input field'
+  )
+
   const getValidationTooltip = () => {
     if (isLoading) return "Processing recipe...";
     if (!hasInput) return "This is content in a tooltip.";
     return isValid ? "Valid URL format" : "Invalid URL format";
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
-    setUrl(value);
-    setIsValid(isValidUrl(value));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -72,7 +73,16 @@ export default function RecipeUrlForm({
       e.preventDefault();
       onSubmit(url, e);
       setUrl("");
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      e.currentTarget.blur()
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    setUrl(value);
+    setIsValid(isValidUrl(value));
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -89,22 +99,20 @@ export default function RecipeUrlForm({
 
   return (
     <TooltipProvider>
-      <div className="my-4">
-        <InputGroup className="w-full">
-          {/* <InputGroupAddon> */}
-          {/*   <InputGroupText>{protocol}</InputGroupText> */}
-          {/* </InputGroupAddon> */}
+      <div>
+        <div className="grid relative w-full">
           <InputGroupInput
-            className="mx-0"
-            value={url}
+            className="col-start-1 row-start-1"
+            disabled={isLoading}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder="https://example.com/recipe"
+            ref={inputRef}
             type="url"
-            disabled={isLoading}
+            value={url}
           />
-          <InputGroupAddon align="inline-end">
+          <InputGroupAddon align="inline-end" className="col-start-1 row-start-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <InputGroupButton className="rounded-full" size="icon-xs">
@@ -114,16 +122,8 @@ export default function RecipeUrlForm({
               <TooltipContent>{getValidationTooltip()}</TooltipContent>
             </Tooltip>
           </InputGroupAddon>
-        </InputGroup>
-        
-        {/* Progress message display */}
-        {progressMessage && (
-          <div className="mt-2 text-sm text-muted-foreground animate-pulse">
-            {progressMessage}
-          </div>
-        )}
+        </div>
       </div>
     </TooltipProvider>
   )
 }
-

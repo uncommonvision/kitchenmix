@@ -18,23 +18,25 @@ MAKEFLAGS += -j2
 help:
 	@echo
 	@echo "Makefile targets:"
-	@echo "  api-deps       – download Go module dependencies"
 	@echo "  api-build      – compile the API binary"
+	@echo "  api-deps       – download Go module dependencies"
 	@echo "  api-dev        – run API in development mode"
 	@echo "  api-run        - run API with compiled binary (localhost only)"
 	@echo "  api-run+       - run API with compiled binary on 0.0.0.0"
 	@echo "  api-test       – run Go tests"
+	@echo "  browser-down   – stop browser service"
+	@echo "  browser-up     – start browser service"
+	@echo "  clean          – remove all generated files"
+	@echo "  dev            – run browser + API + web dev servers concurrently (localhost only)"
+	@echo "  dev+           – run browser + API + web dev servers concurrently on 0.0.0.0"
+	@echo "  start          – build both and serve production UI"
+	@echo "  web-build      – production build of the UI"
 	@echo "  web-deps       – install bun dependencies"
 	@echo "  web-dev        – start Vite dev server (localhost only)"
 	@echo "  web-dev+       – start Vite dev server on 0.0.0.0"
-	@echo "  web-build      – production build of the UI"
 	@echo "  web-preview    – preview built UI (localhost only)"
 	@echo "  web-preview+   – preview built UI on 0.0.0.0"
 	@echo "  web-test       – run frontend test suite"
-	@echo "  dev            – run API + web dev servers concurrently (localhost only)"
-	@echo "  dev+           – run API + web dev servers concurrently on 0.0.0.0"
-	@echo "  start          – build both and serve production UI"
-	@echo "  clean          – remove all generated files"
 	@echo "  help           – show this help"
 
 # ==== API (backend) targets ======================================
@@ -85,7 +87,7 @@ api-preview: api-build
 	@set -a && . ./env/api.prod.env && set +a && cd api && ./bin/$(BINARY)
 
 api-test: api-test-deps
-	@echo -n "🔍 Checking for gotestsum"
+	@echo -n "Checking for gotestsum"
 	@if ! command -v gotestsum >/dev/null 2>&1; then \
 		echo ""; \
 		echo "gotestsum is not installed."; \
@@ -93,17 +95,20 @@ api-test: api-test-deps
 		echo "       go install github.com/gotestyourself/gotestsum@latest"; \
 		exit 1; \
 	else \
-		echo " ☑ installed"; \
+		echo " installed"; \
 	fi
 	@set -a && . ./env/api.test.env && set +a && cd api && gotestsum --format testname -- ./...
 
 # ==== BROWSER targets ============================================
 .PHONY: browser-down browser-up
-browser-up:
-	docker compose up --build browser
 
 browser-down:
+	@echo "Stopping browser service..."
 	docker compose down browser
+
+browser-up:
+	@echo "Starting browser service..."
+	docker compose up --build browser
 
 # ==== WEB (frontend) targets =====================================
 .PHONY: web-clean web-deps web-dev web-dev+ web-preview web-test
@@ -136,28 +141,32 @@ web-test:
 .PHONY: clean dev dev+ preview preview+
 
 clean: api-clean web-clean
-	@echo "🚀 All build artifacts removed"
+	@echo "All build artifacts removed"
 
 dev:
-	@echo "🚀 Starting API and Web dev servers..."
+	@echo "Starting browser, API and Web dev servers..."
+	@$(MAKE) browser-up
 	@$(MAKE) api-dev &
 	@$(MAKE) web-dev &
 	@wait # block until *both* child jobs finish
 
 dev+:
-	@echo "🚀 Starting API and Web dev servers..."
+	@echo "Starting browser, API and Web dev+ servers..."
+	@$(MAKE) browser-up
 	@$(MAKE) api-dev &
 	@$(MAKE) web-dev+ &
 	@wait # block until *both* child jobs finish
 
 preview: api-build web-build
-	@echo "🚀 Starting API and Web preview+ servers..."
+	@echo "Starting browser, API and Web preview servers..."
+	@$(MAKE) browser-up
 	@$(MAKE) api-preview &
 	@$(MAKE) web-preview &
 	@wait # block until *both* child jobs finish
 
 preview+: api-build web-build
-	@echo "🚀 Starting API and Web preview+ servers..."
+	@echo "Starting browser, API and Web preview+ servers..."
+	@$(MAKE) browser-up
 	@$(MAKE) api-preview &
 	@$(MAKE) web-preview+ &
 	@wait # block until *both* child jobs finish

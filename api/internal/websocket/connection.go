@@ -143,7 +143,7 @@ func (c *Connection) processRecipeRequest(payload RecipeUrlRequestPayload) {
 
 	// Create successful response
 	responsePayload := RecipeUrlResponsePayload{
-		Status:  "RECIPE_FOUND",
+		Status:  "success",
 		Request: payload,
 		Recipe:  recipe,
 	}
