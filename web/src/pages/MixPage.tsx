@@ -4,14 +4,16 @@ import { useMessagingService } from '@/hooks/useMessagingService'
 import { useUserIdentity } from '@/hooks/useUserIdentity'
 import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
 import { useToastService } from '@/services/toastService'
+import { useRecipeContext } from '@/contexts/RecipeContext'
 import { MixLayout } from "@/components/layout"
 import { useEffect, useState } from 'react'
 import { MessagesList } from '@/components/ui'
 import UserNameDialog from '@/components/ui/UserNameDialog'
 import UserIdentityState from '@/components/ui/UserIdentityState'
-import { RecipeTabWrapper } from '@/components/RecipeCard'
+import { RecipeList } from '@/components/ui/Recipe'
 
 import type { ChatMessage, MessagePayload } from '@/types'
+import type { Recipe } from '@/types/websocket'
 
 type TabType = 'messaging' | 'recipe';
 
@@ -20,6 +22,7 @@ export default function MixPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('messaging');
   const { user, setUser } = useUserIdentity()
+  const { addRecipe } = useRecipeContext()
   const toastService = useToastService()
 
   // Hydrate the user from localStorage on first mount
@@ -32,7 +35,7 @@ export default function MixPage() {
     } catch { }
   }, [user, setUser])
 
-  const { connectionState, error, sendMessage, onMessage, reconnect } = useMessagingService({
+  const { connectionState, error, sendMessage, sendRecipeUrlRequest, onMessage, reconnect } = useMessagingService({
     uuid: id || "",
     autoConnect: !!id && !!user
   });
@@ -64,11 +67,19 @@ export default function MixPage() {
           toastService.showUserLeft(wsMessage.payload.user.name)
           break
         }
+        case 'RECIPE_ADDITIONS': {
+          if (wsMessage.payload.status === 'success') {
+            wsMessage.payload.list?.forEach((recipe: Recipe) => {
+              addRecipe(recipe)
+            })
+          }
+          break
+        }
       }
     })
 
     return unsubscribe
-  }, [onMessage, toastService])
+  }, [onMessage, toastService, addRecipe])
 
   const handleMessageSubmit = (text: string) => {
     if (!user) return
@@ -100,12 +111,12 @@ export default function MixPage() {
   const TabButton = ({ icon: Icon, label, tab }: { icon: LucideIcon; label?: string; tab: TabType }) => (
     <button
       onClick={() => setActiveTab(tab)}
-      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === tab
+      className={`h-10 w-10 text-sm font-medium rounded-md transition-colors ${activeTab === tab
         ? 'bg-primary text-primary-foreground'
         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
         }`}
     >
-      <Icon className="w-4 h-4 inline" />
+      <Icon className="w-5 h-5 inline" />
       {label ? <span className="ml-2">{label}</span> : null}
     </button>
   )
@@ -157,7 +168,11 @@ export default function MixPage() {
             )}
 
             {activeTab === 'recipe' && (
-              <RecipeTabWrapper user={user} />
+              <RecipeList
+                user={user}
+                sendRecipeUrlRequest={sendRecipeUrlRequest}
+                onMessage={onMessage}
+              />
             )}
           </div>
         )}

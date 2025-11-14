@@ -24,6 +24,8 @@ type Recipe struct {
 	URL         string       `json:"url"`
 	Image       *string      `json:"image,omitempty"`
 	Ingredients []Ingredient `json:"ingredients"`
+	SharerID    string       `json:"sharerId"`
+	SharerName  string       `json:"sharerName"`
 	CreatedAt   time.Time    `json:"createdAt"`
 	UpdatedAt   time.Time    `json:"updatedAt"`
 }
