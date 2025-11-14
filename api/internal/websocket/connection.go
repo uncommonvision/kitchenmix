@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"kitchenmix/api/internal/models"
 	"kitchenmix/api/internal/services/recipe"
 
 	"github.com/gorilla/websocket"
@@ -122,14 +123,13 @@ func (c *Connection) processRecipeRequest(payload RecipeUrlRequestPayload) {
 	}
 
 	// Get recipe using the recipe service with progress updates
-	recipe, err := recipeService.GetRecipeByURL(payload.URL, progressCallback)
+	recipe, err := recipeService.GetRecipeByURL(payload.URL, c.UUID, c.UserID, c.UserName, progressCallback)
 	if err != nil {
 		log.Printf("Failed to get recipe for URL %s from connection %s: %v", payload.URL, c.ID, err)
 		// Create error response
 		responsePayload := RecipeAdditionsPayload{
-			Status:  "ERROR_SERVICE_UNAVAILABLE",
-			Request: payload,
-			Recipe:  nil,
+			Status: "ERROR_SERVICE_UNAVAILABLE",
+			List:   []*models.Recipe{},
 		}
 
 		responseMsg, err := NewMessage(MessageTypeRecipeAdditions, responsePayload)
@@ -143,9 +143,8 @@ func (c *Connection) processRecipeRequest(payload RecipeUrlRequestPayload) {
 
 	// Create successful response
 	responsePayload := RecipeAdditionsPayload{
-		Status:  "success",
-		Request: payload,
-		Recipe:  recipe,
+		Status: "success",
+		List:   []*models.Recipe{recipe},
 	}
 
 	responseMsg, err := NewMessage(MessageTypeRecipeAdditions, responsePayload)
@@ -174,6 +173,23 @@ func (c *Connection) handleMessage(msg WSMessage) {
 		c.UserName = payload.UserName
 		c.Status = "Active"
 		log.Printf("User identified: %s (ID: %s) on connection %s (uuid: %s)", c.UserName, c.UserID, c.ID, c.UUID)
+
+		// Send current recipes for this mix to the identifying client
+		existingRecipes := recipeService.GetMixRecipes(c.UUID)
+		if len(existingRecipes) > 0 {
+			recipePayload := RecipeAdditionsPayload{
+				Status: "success",
+				List:   existingRecipes,
+			}
+			recipeMsg, err := NewMessage(MessageTypeRecipeAdditions, recipePayload)
+			if err != nil {
+				log.Printf("Failed to create recipe additions message: %v", err)
+			} else {
+				// Send only to the identifying connection
+				Pool.BroadcastToUUIDOnlySender(c.UUID, c.ID, recipeMsg)
+				log.Printf("Sent %d existing recipes to user %s in mix %s", len(existingRecipes), c.UserName, c.UUID)
+			}
+		}
 
 		joinPayload := UserJoinedPayload{
 			UserID:    c.UserID,
@@ -206,8 +222,8 @@ func (c *Connection) handleMessage(msg WSMessage) {
 			return
 		}
 
-		// Validate that the sender info matches the connection
-		if payload.SenderID != c.UserID {
+		// Validate that the sharer info matches the connection
+		if payload.SharerID != c.UserID {
 			log.Printf("Sender ID mismatch in RECIPE_URL_REQUEST from connection %s", c.ID)
 			return
 		}

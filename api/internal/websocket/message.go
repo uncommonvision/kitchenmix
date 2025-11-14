@@ -56,16 +56,14 @@ type UserLeftPayload struct {
 }
 
 type RecipeUrlRequestPayload struct {
-	SenderID   string `json:"senderId"`
-	SenderName string `json:"senderName"`
-	SessionID  string `json:"sessionId"`
+	SharerID   string `json:"sharerId"`
+	SharerName string `json:"sharerName"`
 	URL        string `json:"url"`
 }
 
 type RecipeAdditionsPayload struct {
-	Status  string                  `json:"status"`
-	Request RecipeUrlRequestPayload `json:"request"`
-	Recipe  *models.Recipe          `json:"recipe"`
+	Status string           `json:"status"`
+	List   []*models.Recipe `json:"list"`
 }
 
 type RecipeProgressPayload struct {

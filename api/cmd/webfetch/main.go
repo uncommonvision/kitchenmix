@@ -49,6 +49,9 @@ func displayRecipe(recipe *models.Recipe) {
 	// Display source URL
 	fmt.Printf("🔗 Source: %s\n", recipe.URL)
 
+	// Display sharer information
+	fmt.Printf("👤 Added by: %s (ID: %s)\n", recipe.SharerName, recipe.SharerID)
+
 	// Display timestamps
 	fmt.Printf("📅 Added: %s\n", recipe.CreatedAt.Format("2006-01-02 15:04:05"))
 
@@ -66,7 +69,9 @@ func main() {
 	fmt.Printf("🚀 Starting recipe extraction from: %s\n", targetURL)
 
 	// Extract recipe using service with progress callback
-	recipe, err := service.GetRecipeByURL(targetURL, func(phase, status, message string) {
+	// For webfetch, we use default sharer info since it's a standalone CLI tool
+	mixId := getEnv("MIX_ID", "webfetch-cli") // Default mixId for webfetch
+	recipe, err := service.GetRecipeByURL(targetURL, mixId, "webfetch-cli", "WebFetch CLI", func(phase, status, message string) {
 		fmt.Printf("📊 %s: %s - %s\n", phase, status, message)
 	})
 

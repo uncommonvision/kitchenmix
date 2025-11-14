@@ -102,21 +102,10 @@ export function useMessagingService(options: UseMessagingServiceOptions): UseMes
     }
 
     const wsData: RecipeUrlRequestData = {
-      senderId: payload.sender.id,
-      senderName: payload.sender.name,
-      sessionId: payload.channel.id,
+      sharerId: payload.sender.id,
+      sharerName: payload.sender.name,
       url: payload.url,
     }
-
-    // const recipeSubmission: WebSocketMessage = {
-    //   type: 'RECIPE_URL_REQUEST',
-    //   payload: {
-    //     ...payload,
-    //     id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    //     sentAt: new Date().toISOString()
-    //   },
-    //   timestamp: new Date().toISOString()
-    // }
 
     websocketService.send('RECIPE_URL_REQUEST', wsData)
   }
@@ -175,11 +164,11 @@ export function useMessagingService(options: UseMessagingServiceOptions): UseMes
           payload: {
             id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             sender: {
-              id: data.senderId,
-              name: data.senderName
+              id: data.sharerId,
+              name: data.sharerName
             },
             channel: {
-              id: data.sessionId,
+              id: 'General',
               name: 'General'
             },
             url: data.url,
@@ -202,11 +191,11 @@ export function useMessagingService(options: UseMessagingServiceOptions): UseMes
             request: {
               id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               sender: {
-                id: data.request.senderId,
-                name: data.request.senderName
+                id: data.request.sharerId,
+                name: data.request.sharerName
               },
               channel: {
-                id: data.request.sessionId,
+                id: 'General',
                 name: 'General'
               },
               url: data.request.url,
@@ -231,20 +220,7 @@ export function useMessagingService(options: UseMessagingServiceOptions): UseMes
           type: 'RECIPE_ADDITIONS',
           payload: {
             status: data.status,
-            request: {
-              id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              sender: {
-                id: data.request.senderId,
-                name: data.request.senderName
-              },
-              channel: {
-                id: data.request.sessionId,
-                name: 'General'
-              },
-              url: data.request.url,
-              sentAt: new Date().toISOString()
-            },
-            recipe: data.recipe
+            list: data.list || []
           },
           timestamp: new Date().toISOString()
         }

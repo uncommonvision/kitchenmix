@@ -32,8 +32,8 @@ export interface UserIdentifyPayload {
 }
 
 export interface RecipeUrlSubmissionData {
-  senderId: string
-  senderName: string
+  sharerId: string
+  sharerName: string
   sessionId: string
   url: string
 }

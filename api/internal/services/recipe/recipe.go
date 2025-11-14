@@ -9,34 +9,37 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ollama/ollama/api"
 )
 
 type RecipeService struct {
-	// Store for recipes indexed by URL
-	recipeStore map[string]*models.Recipe
+	// Store for recipes indexed by mixId then URL
+	recipeStore map[string]map[string]*models.Recipe
 }
 
 func NewRecipeService() *RecipeService {
 	service := &RecipeService{
-		recipeStore: make(map[string]*models.Recipe),
+		recipeStore: make(map[string]map[string]*models.Recipe),
 	}
 
 	return service
 }
 
 // GetRecipeByURL fetches a recipe from a given URL
-func (s *RecipeService) GetRecipeByURL(url string, progressCallback func(string, string, string)) (*models.Recipe, error) {
-	// Check if we have it in our store
-	if recipe, exists := s.recipeStore[url]; exists {
-		if progressCallback != nil {
-			progressCallback("complete", "completed", "Recipe found in cache")
+func (s *RecipeService) GetRecipeByURL(url string, mixId string, sharerID string, sharerName string, progressCallback func(string, string, string)) (*models.Recipe, error) {
+	// Check if we have it in our store for this mix
+	if mixCache, exists := s.recipeStore[mixId]; exists {
+		if recipe, exists := mixCache[url]; exists {
+			if progressCallback != nil {
+				progressCallback("complete", "completed", "Recipe found in cache")
+			}
+			return recipe, nil
 		}
-		return recipe, nil
 	}
 
 	// If not found, try to dynamically extract from URL
-	recipe, err := s.extractRecipeFromURL(url, progressCallback)
+	recipe, err := s.extractRecipeFromURL(url, mixId, sharerID, sharerName, progressCallback)
 	if err != nil {
 		log.Printf("Failed to extract recipe from URL %s: %v", url, err)
 		if progressCallback != nil {
@@ -49,7 +52,7 @@ func (s *RecipeService) GetRecipeByURL(url string, progressCallback func(string,
 }
 
 // extractRecipeFromURL dynamically extracts a recipe from a given URL using web scraping and AI
-func (s *RecipeService) extractRecipeFromURL(url string, progressCallback func(string, string, string)) (*models.Recipe, error) {
+func (s *RecipeService) extractRecipeFromURL(url string, mixId string, sharerID string, sharerName string, progressCallback func(string, string, string)) (*models.Recipe, error) {
 	// Send progress update that we're starting web content fetch
 	if progressCallback != nil {
 		progressCallback("fetching", "in_progress", fmt.Sprintf("Fetching recipe from %s", url))
@@ -70,7 +73,7 @@ func (s *RecipeService) extractRecipeFromURL(url string, progressCallback func(s
 
 	// // Try to parse as JSON-LD first (if content looks like JSON)
 	// if strings.HasPrefix(strings.TrimSpace(content), "{") || strings.HasPrefix(strings.TrimSpace(content), "[") {
-	// 	if recipe, err := s.parseJSONLDRecipe(content, url); err == nil {
+	// 	if recipe, err := s.parseJSONLDRecipe(content, url, sharerID, sharerName); err == nil {
 	// 		if progressCallback != nil {
 	// 			progressCallback("extracting", "completed", fmt.Sprintf("Extracted from JSON-LD schema with %d ingredients", len(recipe.Ingredients)))
 	// 		}
@@ -91,7 +94,7 @@ func (s *RecipeService) extractRecipeFromURL(url string, progressCallback func(s
 	}
 
 	// Extract recipe using AI
-	recipe, err := s.extractRecipe(content, url)
+	recipe, err := s.extractRecipe(content, url, sharerID, sharerName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract recipe: %w", err)
 	}
@@ -107,7 +110,10 @@ func (s *RecipeService) extractRecipeFromURL(url string, progressCallback func(s
 	}
 
 	// Cache the extracted recipe
-	s.recipeStore[url] = recipe
+	if s.recipeStore[mixId] == nil {
+		s.recipeStore[mixId] = make(map[string]*models.Recipe)
+	}
+	s.recipeStore[mixId][url] = recipe
 
 	return recipe, nil
 }
@@ -167,7 +173,7 @@ HTML CONTENT:
 }
 
 // extractRecipe sends HTML to AI and parses the response
-func (s *RecipeService) extractRecipe(htmlContent, url string) (*models.Recipe, error) {
+func (s *RecipeService) extractRecipe(htmlContent, url string, sharerID string, sharerName string) (*models.Recipe, error) {
 	ollamaClient, err := api.ClientFromEnvironment()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI client: %w", err)
@@ -219,12 +225,12 @@ func (s *RecipeService) extractRecipe(htmlContent, url string) (*models.Recipe, 
 	}
 
 	// Convert to internal Recipe model
-	recipe := s.convertToRecipe(&ollamaResp, url)
+	recipe := s.convertToRecipe(&ollamaResp, url, sharerID, sharerName)
 	return recipe, nil
 }
 
 // convertToRecipe converts AI response to internal Recipe model
-func (s *RecipeService) convertToRecipe(resp *models.OllamaRecipeResponse, url string) *models.Recipe {
+func (s *RecipeService) convertToRecipe(resp *models.OllamaRecipeResponse, url string, sharerID string, sharerName string) *models.Recipe {
 	ingredients := make([]models.Ingredient, 0, len(resp.Ingredients))
 
 	for _, ing := range resp.Ingredients {
@@ -238,10 +244,13 @@ func (s *RecipeService) convertToRecipe(resp *models.OllamaRecipeResponse, url s
 
 	now := time.Now()
 	return &models.Recipe{
+		ID:          uuid.New().String(),
 		Name:        resp.Name,
 		Image:       resp.Image,
 		URL:         url,
 		Ingredients: ingredients,
+		SharerID:    sharerID,
+		SharerName:  sharerName,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -249,7 +258,7 @@ func (s *RecipeService) convertToRecipe(resp *models.OllamaRecipeResponse, url s
 
 // parseJSONLDRecipe parses JSON-LD schema and extracts recipe data
 // Handles 3 formats: array, object with @graph, and direct Recipe object
-func (s *RecipeService) parseJSONLDRecipe(jsonLD string, url string) (*models.Recipe, error) {
+func (s *RecipeService) parseJSONLDRecipe(jsonLD string, url string, sharerID string, sharerName string) (*models.Recipe, error) {
 	// Try parsing as array first (Guardian, AllRecipes format)
 	var dataArray []interface{}
 	if err := json.Unmarshal([]byte(jsonLD), &dataArray); err == nil {
@@ -257,7 +266,7 @@ func (s *RecipeService) parseJSONLDRecipe(jsonLD string, url string) (*models.Re
 			if itemMap, ok := item.(map[string]interface{}); ok {
 				// Check if @type is "Recipe" or contains "Recipe" in array
 				if s.isRecipeType(itemMap["@type"]) {
-					return s.extractRecipeFromJSONLD(itemMap, url)
+					return s.extractRecipeFromJSONLD(itemMap, url, sharerID, sharerName)
 				}
 			}
 		}
@@ -274,7 +283,7 @@ func (s *RecipeService) parseJSONLDRecipe(jsonLD string, url string) (*models.Re
 		for _, item := range graph {
 			if itemMap, ok := item.(map[string]interface{}); ok {
 				if s.isRecipeType(itemMap["@type"]) {
-					return s.extractRecipeFromJSONLD(itemMap, url)
+					return s.extractRecipeFromJSONLD(itemMap, url, sharerID, sharerName)
 				}
 			}
 		}
@@ -282,7 +291,7 @@ func (s *RecipeService) parseJSONLDRecipe(jsonLD string, url string) (*models.Re
 
 	// Check if it's a direct Recipe object (Gordon Ramsay format)
 	if s.isRecipeType(dataObj["@type"]) {
-		return s.extractRecipeFromJSONLD(dataObj, url)
+		return s.extractRecipeFromJSONLD(dataObj, url, sharerID, sharerName)
 	}
 
 	return nil, fmt.Errorf("no Recipe object found in JSON-LD")
@@ -305,7 +314,7 @@ func (s *RecipeService) isRecipeType(typeField interface{}) bool {
 }
 
 // extractRecipeFromJSONLD extracts recipe data from a JSON-LD Recipe object
-func (s *RecipeService) extractRecipeFromJSONLD(recipeData map[string]interface{}, url string) (*models.Recipe, error) {
+func (s *RecipeService) extractRecipeFromJSONLD(recipeData map[string]interface{}, url string, sharerID string, sharerName string) (*models.Recipe, error) {
 	// Extract recipe name
 	name, _ := recipeData["name"].(string)
 	if name == "" {
@@ -332,9 +341,12 @@ func (s *RecipeService) extractRecipeFromJSONLD(recipeData map[string]interface{
 
 	now := time.Now()
 	return &models.Recipe{
+		ID:          uuid.New().String(),
 		Name:        name,
 		URL:         url,
 		Ingredients: ingredients,
+		SharerID:    sharerID,
+		SharerName:  sharerName,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}, nil
@@ -415,4 +427,37 @@ func splitQuantityUnit(s string) (quantity, unit string) {
 		return s[:i], s[i:]
 	}
 	return "", ""
+}
+
+// GetMixRecipes returns all recipes for a given mixId
+func (s *RecipeService) GetMixRecipes(mixId string) []*models.Recipe {
+	mixCache := s.recipeStore[mixId]
+	if mixCache == nil {
+		return nil
+	}
+
+	recipes := make([]*models.Recipe, 0, len(mixCache))
+	for _, recipe := range mixCache {
+		recipes = append(recipes, recipe)
+	}
+	return recipes
+}
+
+// ClearMix removes all recipes for a given mixId
+func (s *RecipeService) ClearMix(mixId string) {
+	delete(s.recipeStore, mixId)
+}
+
+// GetMixRecipeCount returns the number of recipes for a given mixId
+func (s *RecipeService) GetMixRecipeCount(mixId string) int {
+	if mixCache := s.recipeStore[mixId]; mixCache != nil {
+		return len(mixCache)
+	}
+	return 0
+}
+
+// HasMix checks if a mixId exists in the cache
+func (s *RecipeService) HasMix(mixId string) bool {
+	_, exists := s.recipeStore[mixId]
+	return exists
 }

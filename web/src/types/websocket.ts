@@ -66,9 +66,8 @@ export interface RecipeUrlRequestPayload {
 }
 
 export interface RecipeUrlRequestData {
-  senderId: string
-  senderName: string
-  sessionId: string
+  sharerId: string
+  sharerName: string
   url: string
 }
 
@@ -80,8 +79,7 @@ export interface RecipeAdditionsEvent {
 
 export interface RecipeAdditionsPayload {
   status: string
-  request: RecipeUrlRequestPayload
-  recipe: Recipe | null
+  list: Recipe[]
 }
 
 export interface Recipe {
@@ -90,6 +88,8 @@ export interface Recipe {
   url: string
   image?: string | null
   ingredients: Ingredient[]
+  sharerId: string
+  sharerName: string
   createdAt: string
   updatedAt: string
 }
