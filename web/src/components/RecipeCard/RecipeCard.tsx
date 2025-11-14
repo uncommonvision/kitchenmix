@@ -10,7 +10,7 @@ interface RecipeCardProps {
 export default function RecipeCard({ recipe }: RecipeCardProps) {
   const { selectedRecipes, selectRecipe } = useRecipeContext()
   const isSelected = selectedRecipes.includes(recipe.id)
-  
+
   const handleClick = () => {
     selectRecipe(recipe.id, !isSelected)
   }
@@ -21,21 +21,19 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   return (
     <Card
       onClick={handleClick}
-      className={`relative group cursor-pointer rounded-lg border transition-all duration-200 hover:shadow-md hover:scale-105 hover:z-10 ${
-        isSelected
-          ? 'border-ring ring-1 ring-ring bg-transparent shadow-sm'
-          : 'border-border hover:border-primary/50'
-      }`}
+      className={`relative group cursor-pointer rounded-lg border transition-all duration-200 hover:shadow-md hover:scale-105 hover:z-10 ${isSelected
+        ? 'border-ring ring-1 ring-ring bg-transparent shadow-sm'
+        : 'border-border hover:border-primary/50'
+        }`}
     >
-      <div className={`absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full border transition-all ${
-        isSelected
-          ? 'border-ring bg-ring text-ring-foreground'
-          : 'border-muted-foreground/30 bg-background group-hover:border-primary/50'
-      }`}>
+      <div className={`absolute z-10 top-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border transition-all ${isSelected
+        ? 'border-ring bg-ring text-ring-foreground'
+        : 'border-muted-foreground/30 bg-background group-hover:border-primary/50'
+        }`}>
         {isSelected && <Check className="h-3 w-3" />}
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="p-0">
         {/* Recipe Image */}
         <div className="mb-3 h-32 w-full rounded-md bg-muted overflow-hidden">
           {recipe.image ? (
@@ -58,11 +56,11 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         </div>
 
         {/* Recipe Title */}
-        <div className="space-y-2">
+        <div className="px-4 pb-4 space-y-2">
           <h3 className="font-semibold text-foreground leading-tight">
             {recipe.name}
           </h3>
-          
+
           {/* Recipe Metadata */}
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -70,12 +68,12 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
                 📊 {ingredientCount} ingredients
               </span>
             </div>
-            
+
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <ExternalLink className="h-3 w-3" />
               <span className="truncate">{sourceDomain}</span>
             </div>
-            
+
             <div className="text-xs text-muted-foreground">
               Added {new Date(recipe.createdAt).toLocaleDateString()}
             </div>

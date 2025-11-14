@@ -145,28 +145,28 @@ clean: api-clean web-clean
 
 dev:
 	@echo "Starting browser, API and Web dev servers..."
-	@$(MAKE) browser-up
+	@$(MAKE) browser-up &
 	@$(MAKE) api-dev &
 	@$(MAKE) web-dev &
 	@wait # block until *both* child jobs finish
 
 dev+:
 	@echo "Starting browser, API and Web dev+ servers..."
-	@$(MAKE) browser-up
+	@$(MAKE) browser-up &
 	@$(MAKE) api-dev &
 	@$(MAKE) web-dev+ &
 	@wait # block until *both* child jobs finish
 
 preview: api-build web-build
 	@echo "Starting browser, API and Web preview servers..."
-	@$(MAKE) browser-up
+	@$(MAKE) browser-up &
 	@$(MAKE) api-preview &
 	@$(MAKE) web-preview &
 	@wait # block until *both* child jobs finish
 
 preview+: api-build web-build
 	@echo "Starting browser, API and Web preview+ servers..."
-	@$(MAKE) browser-up
+	@$(MAKE) browser-up &
 	@$(MAKE) api-preview &
 	@$(MAKE) web-preview+ &
 	@wait # block until *both* child jobs finish

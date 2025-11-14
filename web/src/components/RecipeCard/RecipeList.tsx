@@ -1,22 +1,15 @@
 import RecipeCard from './RecipeCard'
 import { useRecipeContext } from '@/contexts/RecipeContext'
 
-interface RecipeListProps {
-  emptyMessage?: string
-}
-
-export default function RecipeList({ emptyMessage = "No recipes yet" }: RecipeListProps) {
+export default function RecipeList() {
   const { recipes, selectedRecipes, clearSelection } = useRecipeContext()
 
   if (recipes.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-2">{emptyMessage}</p>
-          <p className="text-sm text-muted-foreground">
-            Add a recipe URL below to get started
-          </p>
-        </div>
+      <div className="h-full flex items-center justify-center">
+        <p className="text-muted-foreground">
+          Add a recipe URL below to get started
+        </p>
       </div>
     )
   }
