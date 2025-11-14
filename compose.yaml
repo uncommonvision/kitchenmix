@@ -1,0 +1,19 @@
+services:
+  browser:
+    build:
+      context: ./browser
+      dockerfile: Dockerfile
+    env_file:
+      - ./env/browser.dev.env
+    expose:
+      - "9222"
+    ports:
+      - "9222:9222"
+    networks:
+      - internal
+    restart: unless-stopped
+    shm_size: "1gb"
+
+networks:
+  internal:
+    driver: bridge

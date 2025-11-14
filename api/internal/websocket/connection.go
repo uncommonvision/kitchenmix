@@ -5,8 +5,13 @@ import (
 	"log"
 	"time"
 
+	"kitchenmix/api/internal/services/recipe"
+
 	"github.com/gorilla/websocket"
 )
+
+// Initialize recipe service
+var recipeService = recipe.NewRecipeService()
 
 const (
 	writeWait      = 10 * time.Second
@@ -96,6 +101,64 @@ func (c *Connection) WritePump() {
 	}
 }
 
+func (c *Connection) processRecipeRequest(payload RecipeUrlRequestPayload) {
+	// Define progress callback that sends messages to requesting connection only
+	progressCallback := func(phase, status, message string) {
+		progressPayload := RecipeProgressPayload{
+			Request: payload,
+			Phase:   phase,
+			Status:  status,
+			Message: message,
+		}
+
+		progressMsg, err := NewMessage(MessageTypeRecipeProgress, progressPayload)
+		if err != nil {
+			log.Printf("Failed to create progress message: %v", err)
+			return
+		}
+
+		// Send to requesting connection only
+		Pool.BroadcastToUUIDOnlySender(c.UUID, c.ID, progressMsg)
+	}
+
+	// Get recipe using the recipe service with progress updates
+	recipe, err := recipeService.GetRecipeByURL(payload.URL, progressCallback)
+	if err != nil {
+		log.Printf("Failed to get recipe for URL %s from connection %s: %v", payload.URL, c.ID, err)
+		// Create error response
+		responsePayload := RecipeAdditionsPayload{
+			Status:  "ERROR_SERVICE_UNAVAILABLE",
+			Request: payload,
+			Recipe:  nil,
+		}
+
+		responseMsg, err := NewMessage(MessageTypeRecipeAdditions, responsePayload)
+		if err != nil {
+			log.Printf("Failed to create RECIPE_ADDITIONS message: %v", err)
+		} else {
+			Pool.BroadcastToUUID(c.UUID, responseMsg)
+		}
+		return
+	}
+
+	// Create successful response
+	responsePayload := RecipeAdditionsPayload{
+		Status:  "success",
+		Request: payload,
+		Recipe:  recipe,
+	}
+
+	responseMsg, err := NewMessage(MessageTypeRecipeAdditions, responsePayload)
+	if err != nil {
+		log.Printf("Failed to create RECIPE_ADDITIONS message: %v", err)
+		return
+	}
+
+	// Broadcast to all connections in the same session (including sender)
+	Pool.BroadcastToUUID(c.UUID, responseMsg)
+	log.Printf("Broadcasted RECIPE_ADDITIONS to %s", c.UUID)
+}
+
 func (c *Connection) handleMessage(msg WSMessage) {
 	switch msg.Type {
 	case MessageTypePing:
@@ -131,6 +194,29 @@ func (c *Connection) handleMessage(msg WSMessage) {
 		}
 		log.Printf("Received CHAT_MESSAGE from connection %s (uuid: %s)", c.ID, c.UUID)
 		Pool.BroadcastToUUIDExceptSender(c.UUID, c.ID, msg)
+	case MessageTypeRecipeUrlRequest:
+		if c.Status != "Active" {
+			log.Printf("Rejected RECIPE_URL_REQUEST from unidentified connection %s", c.ID)
+			return
+		}
+
+		var payload RecipeUrlRequestPayload
+		if err := json.Unmarshal(msg.Data, &payload); err != nil {
+			log.Printf("Failed to parse RECIPE_URL_REQUEST payload from connection %s: %v", c.ID, err)
+			return
+		}
+
+		// Validate that the sender info matches the connection
+		if payload.SenderID != c.UserID {
+			log.Printf("Sender ID mismatch in RECIPE_URL_REQUEST from connection %s", c.ID)
+			return
+		}
+
+		log.Printf("Received RECIPE_URL_REQUEST from %s (session: %s): %s", c.UserName, c.UUID, payload.URL)
+
+		// Process recipe in a separate goroutine to avoid blocking ReadPump
+		// This ensures the connection can continue processing pongs and other messages
+		go c.processRecipeRequest(payload)
 	default:
 		log.Printf("Unknown message type from connection %s: %s", c.ID, msg.Type)
 	}

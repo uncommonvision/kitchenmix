@@ -3,7 +3,7 @@ package websocket
 import (
 	"log"
 
-	ws "aframe/api/internal/websocket"
+	ws "kitchenmix/api/internal/websocket"
 )
 
 func HandlePing(conn *ws.Connection, msg ws.WSMessage) {

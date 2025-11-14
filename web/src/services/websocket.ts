@@ -5,6 +5,9 @@ export type WSMessageType =
   | 'USER_JOINED'
   | 'USER_LEFT'
   | 'CHAT_MESSAGE'
+  | 'RECIPE_URL_REQUEST'
+  | 'RECIPE_PROGRESS'
+  | 'RECIPE_ADDITIONS'
 
 export interface ConnectionAckData {
   id: string
@@ -26,6 +29,13 @@ export interface GenericPayload {
 export interface UserIdentifyPayload {
   userId: string
   userName: string
+}
+
+export interface RecipeUrlSubmissionData {
+  senderId: string
+  senderName: string
+  sessionId: string
+  url: string
 }
 
 export type MessageHandler<T = unknown> = (data: T) => void

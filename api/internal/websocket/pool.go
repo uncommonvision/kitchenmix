@@ -126,6 +126,33 @@ func (p *ConnectionPool) BroadcastToUUIDExceptSender(uuid string, excludeConnID 
 	log.Printf("Broadcast message type %s to %d connections (uuid: %s, excluded: %s)", message.Type, sent, uuid, excludeConnID)
 }
 
+func (p *ConnectionPool) BroadcastToUUIDOnlySender(uuid string, senderConnID string, message WSMessage) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	connections, exists := p.index[uuid]
+	if !exists {
+		log.Printf("No connections found for uuid: %s", uuid)
+		return
+	}
+
+	// Find the exact connection that matches the senderConnID
+	for _, conn := range connections {
+		if conn.ID != senderConnID {
+			continue
+		}
+		// Send the message (non-blocking, same pattern as other broadcast helpers)
+		select {
+		case conn.Send <- message:
+			log.Printf("Sent %s to sender %s (uuid: %s)", message.Type, senderConnID, uuid)
+		default:
+			log.Printf("Failed to send message to connection %s (channel full)", conn.ID)
+		}
+		// We can break after we've delivered to the single match
+		break
+	}
+}
+
 func (p *ConnectionPool) GetUUIDConnections(uuid string) []*Connection {
 	p.mu.RLock()
 	defer p.mu.RUnlock()

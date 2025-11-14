@@ -20,6 +20,16 @@ export default function MessageSubmission({
     'Focus on the message input field'
   )
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e as any)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      e.currentTarget.blur()
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (message.trim()) {
@@ -28,15 +38,8 @@ export default function MessageSubmission({
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit(e as any)
-    }
-  }
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background p-4">
+    <div>
       <form onSubmit={handleSubmit}>
         <div className="grid">
           <textarea
@@ -46,7 +49,7 @@ export default function MessageSubmission({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             rows={1}
-            className="col-start-1 row-start-1 resize-none min-h-9 max-h-32 overflow-auto px-3 py-2 rounded-md border border-input bg-background text-foreground text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] placeholder:text-muted-foreground md:text-sm"
+            className="col-start-1 row-start-1 resize-none min-h-9 max-h-32 overflow-auto px-3 py-2 rounded-md border border-input bg-background text-foreground text-base shadow-xs outline-none focus-visible:ring-1 focus-visible:ring-ring dark:bg-input/30 placeholder:text-muted-foreground md:text-sm"
           />
           <div
             className="col-start-1 row-start-1 invisible whitespace-pre-wrap break-words px-3 py-2 text-base md:text-sm pointer-events-none"

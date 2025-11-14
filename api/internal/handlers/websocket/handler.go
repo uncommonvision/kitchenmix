@@ -4,10 +4,10 @@ import (
 	"log"
 	"net/http"
 
-	ws "aframe/api/internal/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	ws "kitchenmix/api/internal/websocket"
 )
 
 var upgrader = websocket.Upgrader{

@@ -5,6 +5,9 @@ export type WebSocketMessage =
   | UserJoinedEvent
   | UserLeftEvent
   | ErrorEvent
+  | RecipeUrlRequestEvent
+  | RecipeAdditionsEvent
+  | RecipeProgressEvent
 
 export interface MessageEvent {
   type: 'MESSAGE'
@@ -30,6 +33,17 @@ export interface ErrorEvent {
   timestamp: string
 }
 
+export interface ErrorPayload {
+  message: string
+  code?: string
+}
+
+export interface RecipeUrlRequestEvent {
+  type: 'RECIPE_URL_REQUEST'
+  payload: RecipeUrlRequestPayload
+  timestamp: string
+}
+
 export interface MessagePayload {
   id: string
   sender: User
@@ -43,7 +57,65 @@ export interface UserEventPayload {
   channelId: string
 }
 
-export interface ErrorPayload {
+export interface RecipeUrlRequestPayload {
+  id: string
+  sender: User
+  channel: Channel
+  url: string
+  sentAt: string
+}
+
+export interface RecipeUrlRequestData {
+  senderId: string
+  senderName: string
+  sessionId: string
+  url: string
+}
+
+export interface RecipeAdditionsEvent {
+  type: 'RECIPE_ADDITIONS'
+  payload: RecipeAdditionsPayload
+  timestamp: string
+}
+
+export interface RecipeAdditionsPayload {
+  status: string
+  request: RecipeUrlRequestPayload
+  recipe: Recipe | null
+}
+
+export interface Recipe {
+  id: string
+  name: string
+  url: string
+  image?: string | null
+  ingredients: Ingredient[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Ingredient {
+  name: string
+  groceryItem?: GroceryItem | null
+  quantity?: string | null
+  unit?: string | null
+}
+
+export interface GroceryItem {
+  id: string
+  name: string
+  category: string
+}
+
+export interface RecipeProgressEvent {
+  type: 'RECIPE_PROGRESS'
+  payload: RecipeProgressPayload
+  timestamp: string
+}
+
+export interface RecipeProgressPayload {
+  request: RecipeUrlRequestPayload
+  phase: string
+  status: string
   message: string
-  code?: string
 }
