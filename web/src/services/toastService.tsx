@@ -8,12 +8,10 @@ export function useToastService() {
 
   const getToastOptions = (baseOptions: any = {}) => ({
     ...baseOptions,
-    position: 'top-center',
-    // position: isMobile ? "top-center" : "bottom-right",
     style: {
       ...(isMobile && {
-        width: 'calc(100vw - 2rem)',
-        margin: '1rem',
+        width: '90vw',
+        maxWidth: '400px',
         fontSize: '16px'
       }),
       ...baseOptions.style
@@ -30,20 +28,30 @@ export function useToastService() {
     )
   }
 
-  const showRecipeSuccess = (recipe: Recipe, request: RecipeUrlRequestPayload) => {
-    toast(`${recipe.name} recipe has been added by ${request.sender.name}! 🎉`,
-      getToastOptions({
-        action: {
-          label: "View Recipe",
-          onClick: (_toastId: string | number) => {
-            window.open(recipe.url, "_blank", "noopener,noreferrer")
-          }
-        },
-        description: null,
-        duration: 4000,
-        icon: <ChefHat className="h-4 w-4 text-gray-500" />,
-      }) as any
-    )
+  const showRecipeSuccess = (recipes: Recipe[], _request: RecipeUrlRequestPayload) => {
+    if (recipes.length === 1) {
+      toast(`${recipes[0].name} recipe has been added by ${recipes[0].sharerName}! 🎉`,
+        getToastOptions({
+          action: {
+            label: "View Recipe",
+            onClick: (_toastId: string | number) => {
+              window.open(recipes[0].url, "_blank", "noopener,noreferrer")
+            }
+          },
+          description: null,
+          duration: 4000,
+          icon: <ChefHat className="h-4 w-4 text-gray-500" />,
+        }) as any
+      )
+    } else if (recipes.length > 1) {
+      toast(`${recipes.length} recipes have been added! 🎉`,
+        getToastOptions({
+          description: "Check the recipe list to see them all",
+          duration: 4000,
+          icon: <ChefHat className="h-4 w-4 text-gray-500" />,
+        }) as any
+      )
+    }
   }
 
   const showRecipeError = (errorMessage?: string) => {

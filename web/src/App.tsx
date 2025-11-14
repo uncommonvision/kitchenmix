@@ -10,13 +10,13 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <Toaster
-        position={isMobile ? "top-center" : "bottom-right"}
+        position="top-center"
         toastOptions={{
-          duration: isMobile ? 3500 : 4000,
+          duration: 3500,
           style: {
             ...(isMobile && {
-              width: 'calc(100vw - 2rem)',
-              margin: '1rem',
+              width: '90vw',
+              maxWidth: '400px',
               fontSize: '16px'
             })
           }
