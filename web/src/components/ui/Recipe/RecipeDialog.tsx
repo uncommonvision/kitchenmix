@@ -34,6 +34,9 @@ export default function RecipeDialog({
     const unsubscribe = onMessage((wsMessage) => {
       switch (wsMessage.type) {
         case 'RECIPE_ADDITIONS': {
+          // Reset loading state when recipe processing completes
+          setIsLoading(false)
+          
           // Auto-close dialog when recipe processing completes
           if (wsMessage.payload.status === 'success') {
             setShouldClose(true)
@@ -62,11 +65,7 @@ export default function RecipeDialog({
     }
 
     sendRecipeUrlRequest(recipePayload)
-    
-    // Reset loading state after a timeout (will be reset by WebSocket message handler)
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 5000) // Fallback timeout
+    // Loading state will be reset by WebSocket message handler
   }
 
   // Don't render if dialog should be closed
