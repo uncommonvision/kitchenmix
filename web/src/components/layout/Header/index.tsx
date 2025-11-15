@@ -1,6 +1,5 @@
 import { Utensils } from 'lucide-react'
 import SearchBar from '../../ui/SearchBar'
-import ThemeToggle from '../../ui/ThemeToggle'
 import UserMenu from '../../ui/UserMenu'
 import { useUserIdentity } from '@/hooks/useUserIdentity'
 import { useMessagingService } from '@/hooks/useMessagingService'
@@ -9,7 +8,7 @@ import { useParams } from 'react-router-dom'
 export default function Header() {
   const { user } = useUserIdentity()
   const { id } = useParams<{ id: string }>()
-  const { connectionState, error, reconnect } = useMessagingService({
+  const { connectionState } = useMessagingService({
     uuid: id || "",
     autoConnect: !!id && !!user
   })
@@ -30,18 +29,15 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Right side: Search Bar, Theme Toggle and User Menu */}
+        {/* Right side: Search Bar and User Menu */}
         <div className="flex items-center space-x-1 sm:space-x-2 flex-1 justify-end ml-2 sm:ml- md:ml-8 lg:ml-16">
           <SearchBar
             placeholder="Type / to search"
             onSearch={handleSearch}
           />
-          <ThemeToggle />
           <UserMenu 
             user={user}
             connectionState={connectionState}
-            error={error}
-            reconnect={reconnect}
           />
         </div>
       </div>

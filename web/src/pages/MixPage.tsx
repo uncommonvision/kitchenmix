@@ -35,7 +35,7 @@ export default function MixPage() {
     } catch { }
   }, [user, setUser])
 
-  const { connectionState, error, sendMessage, sendRecipeUrlRequest, onMessage, reconnect } = useMessagingService({
+  const { connectionState, sendMessage, sendRecipeUrlRequest, onMessage } = useMessagingService({
     uuid: id || "",
     autoConnect: !!id && !!user
   });
