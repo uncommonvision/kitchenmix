@@ -75,36 +75,30 @@ export default function RecipeList({ user, sendRecipeUrlRequest, onMessage }: Re
     sendRecipeUrlRequest(recipePayload);
   }
 
-  if (recipes.length === 0) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <p className="text-muted-foreground">
-          Add a recipe URL below to get started
-        </p>
-      </div>
-    )
-  }
-
   return (
     <div className="grid grid-rows-[1fr_auto] h-full min-h-0">
       <div className="overflow-y-auto">
-        <div className="space-y-4">
-          {/* Selection Summary */}
-          {selectedRecipes.length > 0 && (
-            <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
-              <div className="text-sm text-primary">
-                {selectedRecipes.length} recipe{selectedRecipes.length === 1 ? '' : 's'} selected
-              </div>
-              <button
-                onClick={clearSelection}
-                className="text-xs text-primary hover:underline"
-              >
-                Clear selection
-              </button>
+        {selectedRecipes.length > 0 && (
+          <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+            <div className="text-sm text-primary">
+              {selectedRecipes.length} recipe{selectedRecipes.length === 1 ? '' : 's'} selected
             </div>
-          )}
+            <button
+              onClick={clearSelection}
+              className="text-xs text-primary hover:underline"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
 
-          {/* Recipe Grid */}
+        {recipes.length === 0 ? (
+          <div className="h-full flex items-center justify-center">
+            <p className="text-muted-foreground text-center">
+              Add a recipe URL below to get started
+            </p>
+          </div>
+        ) : (
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {recipes.map((recipe) => (
               <RecipeCard
@@ -113,7 +107,7 @@ export default function RecipeList({ user, sendRecipeUrlRequest, onMessage }: Re
               />
             ))}
           </div>
-        </div>
+        )}
       </div>
 
       <RecipeUrlForm
