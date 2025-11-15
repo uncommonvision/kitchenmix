@@ -9,7 +9,7 @@ import { MixLayout } from "@/components/layout"
 import { useEffect, useState } from 'react'
 import { MessagesList } from '@/components/ui'
 import UserNameDialog from '@/components/ui/UserNameDialog'
-import UserIdentityState from '@/components/ui/UserIdentityState'
+
 import { RecipeList } from '@/components/ui/Recipe'
 
 import type { ChatMessage, MessagePayload } from '@/types'
@@ -134,17 +134,9 @@ export default function MixPage() {
       <div className="flex flex-col flex-1 min-h-0">
         <UserNameDialog open={!user} onSubmit={handleUserNameSubmit} />
 
-        {/* User Identity State and Tab Navigation */}
+        {/* Tab Navigation */}
         {id && user && (
-          <div className="flex items-center justify-between mb-2">
-            <UserIdentityState
-              user={user}
-              mixId={id}
-              connectionState={connectionState}
-              error={error}
-              reconnect={reconnect}
-            />
-
+          <div className="flex justify-end mb-2">
             <div className="flex gap-2">
               <TabButton icon={MessageSquare} tab="messaging" />
               <TabButton icon={ChefHat} tab="recipe" />

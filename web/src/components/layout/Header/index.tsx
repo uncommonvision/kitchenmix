@@ -2,8 +2,18 @@ import { Utensils } from 'lucide-react'
 import SearchBar from '../../ui/SearchBar'
 import ThemeToggle from '../../ui/ThemeToggle'
 import UserMenu from '../../ui/UserMenu'
+import { useUserIdentity } from '@/hooks/useUserIdentity'
+import { useMessagingService } from '@/hooks/useMessagingService'
+import { useParams } from 'react-router-dom'
 
 export default function Header() {
+  const { user } = useUserIdentity()
+  const { id } = useParams<{ id: string }>()
+  const { connectionState, error, reconnect } = useMessagingService({
+    uuid: id || "",
+    autoConnect: !!id && !!user
+  })
+
   const handleSearch = (query: string) => {
     console.log('Search query:', query)
     // TODO: Implement search functionality
@@ -27,7 +37,12 @@ export default function Header() {
             onSearch={handleSearch}
           />
           <ThemeToggle />
-          <UserMenu />
+          <UserMenu 
+            user={user}
+            connectionState={connectionState}
+            error={error}
+            reconnect={reconnect}
+          />
         </div>
       </div>
     </header>
