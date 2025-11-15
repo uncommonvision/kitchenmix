@@ -20,7 +20,7 @@ type TabType = 'messaging' | 'recipe';
 export default function MixPage() {
   const { id } = useParams<{ id: string }>()
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [activeTab, setActiveTab] = useState<TabType>('messaging');
+  const [activeTab, setActiveTab] = useState<TabType>('recipe');
   const { user, setUser } = useUserIdentity()
   const { addRecipe } = useRecipeContext()
   const toastService = useToastService()
