@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom'
-import { ChefHat, MessageSquare, type LucideIcon } from 'lucide-react'
+import { ChefHat, MessageSquare, Plus, type LucideIcon } from 'lucide-react'
 import { useMessagingService } from '@/hooks/useMessagingService'
 import { useUserIdentity } from '@/hooks/useUserIdentity'
 import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
@@ -136,11 +136,16 @@ export default function MixPage() {
 
         {/* Tab Navigation */}
         {id && user && (
-          <div className="flex justify-end mb-2">
+          <div className="flex justify-between items-center mb-2">
             <div className="flex gap-2">
-              <TabButton icon={MessageSquare} tab="messaging" />
               <TabButton icon={ChefHat} tab="recipe" />
+              <TabButton icon={MessageSquare} tab="messaging" />
             </div>
+            {activeTab === 'recipe' && (
+              <button className="h-10 w-10 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted">
+                <Plus className="w-5 h-5 inline" />
+              </button>
+            )}
           </div>
         )}
 
