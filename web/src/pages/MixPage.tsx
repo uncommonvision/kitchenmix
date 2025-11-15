@@ -11,6 +11,7 @@ import { MessagesList } from '@/components/ui'
 import UserNameDialog from '@/components/ui/UserNameDialog'
 
 import { RecipeList } from '@/components/ui/Recipe'
+import RecipeDialog from '@/components/ui/Recipe/RecipeDialog'
 
 import type { ChatMessage, MessagePayload } from '@/types'
 import type { Recipe } from '@/types/websocket'
@@ -20,7 +21,8 @@ type TabType = 'messaging' | 'recipe';
 export default function MixPage() {
   const { id } = useParams<{ id: string }>()
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [activeTab, setActiveTab] = useState<TabType>('recipe');
+  const [activeTab, setActiveTab] = useState<TabType>('recipe')
+  const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const { user, setUser } = useUserIdentity()
   const { addRecipe } = useRecipeContext()
   const toastService = useToastService()
@@ -142,7 +144,10 @@ export default function MixPage() {
               <TabButton icon={MessageSquare} tab="messaging" />
             </div>
             {activeTab === 'recipe' && (
-              <button className="h-10 w-10 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted">
+              <button 
+                onClick={() => setRecipeDialogOpen(true)}
+                className="h-10 w-10 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
                 <Plus className="w-5 h-5 inline" />
               </button>
             )}
@@ -167,13 +172,19 @@ export default function MixPage() {
             {activeTab === 'recipe' && (
               <RecipeList
                 user={user}
-                sendRecipeUrlRequest={sendRecipeUrlRequest}
-                onMessage={onMessage}
               />
             )}
           </div>
         )}
       </div>
+      
+      <RecipeDialog
+        open={recipeDialogOpen}
+        onClose={() => setRecipeDialogOpen(false)}
+        user={user}
+        sendRecipeUrlRequest={sendRecipeUrlRequest}
+        onMessage={onMessage}
+      />
     </MixLayout>
   )
 }
