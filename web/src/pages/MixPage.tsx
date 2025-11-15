@@ -141,9 +141,11 @@ export default function MixPage() {
               <TabButton icon={ChefHat} tab="recipe" />
               <TabButton icon={MessageSquare} tab="messaging" />
             </div>
-            <button className="h-10 w-10 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted">
-              <Plus className="w-5 h-5 inline" />
-            </button>
+            {activeTab === 'recipe' && (
+              <button className="h-10 w-10 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted">
+                <Plus className="w-5 h-5 inline" />
+              </button>
+            )}
           </div>
         )}
 
