@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      allowedHosts: env.VITE_ALLOWED_HOSTS.split(","),
       proxy: {
         '/api': {
           target: proxyTarget,
