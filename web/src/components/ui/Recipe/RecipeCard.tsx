@@ -1,5 +1,6 @@
-import { Check, ExternalLink } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { Recipe } from '@/types/websocket'
 import { useRecipeContext } from '@/contexts/RecipeContext'
 
@@ -11,8 +12,11 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const { selectedRecipes, selectRecipe } = useRecipeContext()
   const isSelected = selectedRecipes.includes(recipe.id)
 
-  const handleClick = () => {
-    selectRecipe(recipe.id, !isSelected)
+  const handleClick = (e: React.MouseEvent) => {
+    // Only trigger selection if not clicking on the checkbox
+    if (!(e.target as HTMLElement).closest('button')) {
+      selectRecipe(recipe.id, !isSelected)
+    }
   }
 
   const sourceDomain = recipe.url ? new URL(recipe.url).hostname : 'Unknown'
@@ -25,13 +29,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         : 'border-border hover:border-primary/50'
         }`}
     >
-      <div className={`absolute z-10 top-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border transition-all ${isSelected
-        ? 'border-ring bg-ring text-ring-foreground'
-        : 'border-muted-foreground/30 bg-background group-hover:border-primary/50'
-        }`}>
-        {isSelected && <Check className="h-3 w-3" />}
-      </div>
-
       <CardContent className="p-0">
         {/* Recipe Image */}
         <div className="mb-3 h-32 w-full rounded-md bg-muted overflow-hidden">
@@ -79,6 +76,15 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
               Added by {recipe.sharerName || 'Unknown'}
             </div>
           </div>
+        </div>
+        
+        {/* Square Checkbox in Bottom Right Corner */}
+        <div className="absolute bottom-2 right-2">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => selectRecipe(recipe.id, !isSelected)}
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       </CardContent>
     </Card>
