@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
 import { RecipeProvider } from '@/contexts/RecipeContext'
+import { NavigationProvider } from '@/contexts/NavigationContext'
 import { useDeviceDetection } from "@/hooks/useDeviceDetection"
 
 function App() {
@@ -23,7 +24,9 @@ function App() {
         }}
       />
       <RecipeProvider>
-        <Outlet />
+        <NavigationProvider>
+          <Outlet />
+        </NavigationProvider>
       </RecipeProvider>
     </ThemeProvider>
   )
