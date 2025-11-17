@@ -5,6 +5,7 @@ import { useUserIdentity } from '@/hooks/useUserIdentity'
 import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
 import { useToastService } from '@/services/toastService'
 import { useRecipeContext } from '@/contexts/RecipeContext'
+import { useNavigationContext } from '@/contexts/NavigationContext'
 import { MixLayout } from "@/components/layout"
 import { useEffect, useState } from 'react'
 import { MessagesList } from '@/components/ui'
@@ -15,13 +16,12 @@ import RecipeDialog from '@/components/ui/Recipe/RecipeDialog'
 
 import type { ChatMessage, MessagePayload } from '@/types'
 import type { Recipe } from '@/types/websocket'
-
-type TabType = 'messaging' | 'recipe';
+import type { TabType } from '@/contexts/NavigationContext'
 
 export default function MixPage() {
   const { id } = useParams<{ id: string }>()
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [activeTab, setActiveTab] = useState<TabType>('recipe')
+  const { activeTab, setActiveTab } = useNavigationContext()
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const { user, setUser } = useUserIdentity()
   const { addRecipe } = useRecipeContext()
