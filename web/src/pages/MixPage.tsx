@@ -144,7 +144,7 @@ export default function MixPage() {
               <TabButton icon={MessageSquare} tab="messaging" />
             </div>
             {activeTab === 'recipe' && (
-              <button 
+              <button
                 onClick={() => setRecipeDialogOpen(true)}
                 className="h-10 w-10 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
               >
@@ -156,7 +156,7 @@ export default function MixPage() {
 
         {/* Tab Content */}
         {id && user && (
-          <div className="max-h-[calc(100vh-9rem)] flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
             {activeTab === 'messaging' && (
               <div className="h-full flex flex-col">
                 <MessagesList
@@ -171,13 +171,12 @@ export default function MixPage() {
 
             {activeTab === 'recipe' && (
               <RecipeList
-                user={user}
               />
             )}
           </div>
         )}
       </div>
-      
+
       <RecipeDialog
         open={recipeDialogOpen}
         onClose={() => setRecipeDialogOpen(false)}

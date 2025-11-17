@@ -23,6 +23,54 @@
   --color-ring: hsl(240 5.9% 74%);
 }
 
+/* Base styles for proper height inheritance */
+@layer base {
+  html, body {
+    height: 100%;
+    min-height: 100%;
+    background-color: var(--color-background);
+  }
+  
+  /* Improve mobile browser support */
+  @supports (height: 100dvh) {
+    html, body {
+      height: 100dvh;
+      min-height: 100dvh;
+    }
+  }
+  
+  /* Handle safe areas for notches */
+  @supports (padding: env(safe-area-inset-top)) {
+    body {
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      background-color: var(--color-background); /* Ensure background fills safe areas */
+    }
+    
+    /* Remove padding for the root container since body now has padding */
+    #root {
+      padding: 0;
+    }
+  }
+  
+  /* Safe area padding class for components that need to handle safe areas */
+  .safe-area-padding {
+    padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    background-color: var(--color-background);
+    background-attachment: fixed;
+  }
+  
+  /* Safe area padding for top only (for fixed headers) */
+  .safe-area-padding-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  /* Ensure the background covers the entire viewport */
+  .bg-background {
+    background-color: var(--color-background);
+    background-attachment: fixed;
+  }
+}
+
 /* Dark mode colors */
 .dark {
   --color-background: hsl(240 10% 3.9%);

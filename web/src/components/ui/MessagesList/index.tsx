@@ -48,8 +48,7 @@ export default function MessagesList({
 
   return (
     <div className="grid grid-rows-[1fr_auto] h-full min-h-0">
-      {/* Row 1: Scrollable messages container - gets all available space */}
-      <div className="overflow-y-auto pr-2">
+      <div className="pr-2">
         <div className="flex flex-col gap-4 pb-4">
           {messages.map((message) => (
             <MessageItem
@@ -62,7 +61,6 @@ export default function MessagesList({
         </div>
       </div>
 
-      {/* Row 2: Input field - auto-sizes for content */}
       {showInput && onMessageSubmit && (
         <MessageSubmission
           onSubmit={onMessageSubmit}
