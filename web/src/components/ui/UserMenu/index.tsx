@@ -2,6 +2,7 @@ import { User, Settings, LogOut } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
+import { useUserIdentity } from '@/hooks/useUserIdentity'
 import type { User as UserType } from '@/types'
 
 interface UserMenuProps {
@@ -14,6 +15,7 @@ interface UserMenuProps {
 export default function UserMenu({ user, connectionState, error, reconnect }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const { clearUser } = useUserIdentity()
 
   const toggleOpen = () => setIsOpen(prev => !prev)
 
@@ -24,6 +26,12 @@ export default function UserMenu({ user, connectionState, error, reconnect }: Us
     'Toggle User Menu',
     'Open or close the user menu'
   )
+
+  const handleSignOut = () => {
+    clearUser()
+    window.localStorage.removeItem('mixUserName')
+    setIsOpen(false)
+  }
 
   const getConnectionStatusColor = () => {
     if (!connectionState) return 'bg-gray-400'
@@ -107,7 +115,10 @@ export default function UserMenu({ user, connectionState, error, reconnect }: Us
           
           <div className="my-1 h-px bg-border" />
           
-          <button className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground text-foreground">
+          <button 
+            onClick={handleSignOut}
+            className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground text-foreground"
+          >
             <LogOut className="mr-2 h-4 w-4" />
             Sign out
           </button>
