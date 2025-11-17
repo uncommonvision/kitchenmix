@@ -1,18 +1,7 @@
 import RecipeCard from './RecipeCard'
 import { useRecipeContext } from '@/contexts/RecipeContext'
-import { useToastService } from '@/services/toastService'
-import { useEffect, useState } from 'react'
-import type { WebSocketMessage } from '@/types/websocket'
 
-interface RecipeListProps {
-  user: {
-    id: string
-    name: string
-    [key: string]: any
-  } // User type from useUserIdentity
-}
-
-export default function RecipeList({ user }: RecipeListProps) {
+export default function RecipeList() {
   const { clearSelection, recipes, selectedRecipes } = useRecipeContext()
 
   return (
