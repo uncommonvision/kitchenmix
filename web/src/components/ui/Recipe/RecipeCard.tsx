@@ -15,7 +15,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
     selectRecipe(recipe.id, !isSelected)
   }
 
-  const ingredientCount = recipe.ingredients?.length || 0
   const sourceDomain = recipe.url ? new URL(recipe.url).hostname : 'Unknown'
 
   return (
@@ -64,18 +63,20 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           {/* Recipe Metadata */}
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                📊 {ingredientCount} ingredients
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <ExternalLink className="h-3 w-3" />
-              <span className="truncate">{sourceDomain}</span>
+              <a 
+                href={recipe.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="truncate hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {sourceDomain}
+              </a>
             </div>
 
             <div className="text-xs text-muted-foreground">
-              Added {new Date(recipe.createdAt).toLocaleDateString()}
+              Added by {recipe.sharerName || 'Unknown'}
             </div>
           </div>
         </div>
