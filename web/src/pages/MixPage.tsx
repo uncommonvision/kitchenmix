@@ -116,7 +116,7 @@ export default function MixPage() {
 
   return (
     <MixLayout>
-      <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex flex-col flex-1 min-h-0 h-full">
         <UserNameDialog open={!user} onSubmit={handleUserNameSubmit} />
 
         {/* Section Header with Plus Button */}
@@ -139,22 +139,25 @@ export default function MixPage() {
 
         {/* Tab Content */}
         {id && user && (
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto h-full">
             {activeTab === 'messaging' && (
-              <div className="flex flex-col h-full min-h-0">
-                <MessagesList
-                  messages={messages}
-                  currentUser={user}
-                  showInput={true}
-                  onMessageSubmit={handleMessageSubmit}
-                  inputPlaceholder="Type a message..."
-                />
+              <div className="flex flex-col h-full min-h-0 overflow-hidden">
+                <div className="flex-1 overflow-y-auto">
+                  <MessagesList
+                    messages={messages}
+                    currentUser={user}
+                    showInput={true}
+                    onMessageSubmit={handleMessageSubmit}
+                    inputPlaceholder="Type a message..."
+                  />
+                </div>
               </div>
             )}
 
             {activeTab === 'recipe' && (
-              <RecipeList
-              />
+              <div className="flex flex-col h-full min-h-0">
+                <RecipeList />
+              </div>
             )}
             
             {activeTab === 'grocerylist' && (
