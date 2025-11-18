@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom'
-import { ChefHat, MessageSquare, Plus, type LucideIcon } from 'lucide-react'
+import { ChefHat, MessageSquare, Plus } from 'lucide-react'
 import { useMessagingService } from '@/hooks/useMessagingService'
 import { useUserIdentity } from '@/hooks/useUserIdentity'
 import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
@@ -16,7 +16,6 @@ import RecipeDialog from '@/components/ui/Recipe/RecipeDialog'
 
 import type { ChatMessage, MessagePayload } from '@/types'
 import type { Recipe } from '@/types/websocket'
-import type { TabType } from '@/contexts/NavigationContext'
 
 export default function MixPage() {
   const { id } = useParams<{ id: string }>()
@@ -110,19 +109,6 @@ export default function MixPage() {
     setActiveTab(activeTab === 'messaging' ? 'recipe' : 'messaging')
   }
 
-  const TabButton = ({ icon: Icon, label, tab }: { icon: LucideIcon; label?: string; tab: TabType }) => (
-    <button
-      onClick={() => setActiveTab(tab)}
-      className={`h-10 w-10 text-sm font-medium rounded-md transition-colors ${activeTab === tab
-        ? 'bg-primary text-primary-foreground'
-        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-        }`}
-    >
-      <Icon className="w-5 h-5 inline" />
-      {label ? <span className="ml-2">{label}</span> : null}
-    </button>
-  )
-
   // Tab navigation hotkeys
   useKeydownShortcut(
     { key: 'Tab' },
@@ -136,21 +122,21 @@ export default function MixPage() {
       <div className="flex flex-col flex-1 min-h-0">
         <UserNameDialog open={!user} onSubmit={handleUserNameSubmit} />
 
-        {/* Tab Navigation */}
+        {/* Section Header with Plus Button */}
         {id && user && (
-          <div className="flex justify-between items-center mb-2 px-4">
-            <div className="flex gap-2">
-              <TabButton icon={ChefHat} tab="recipe" />
-              <TabButton icon={MessageSquare} tab="messaging" />
-            </div>
-            {activeTab === 'recipe' && (
-              <button
-                onClick={() => setRecipeDialogOpen(true)}
-                className="h-10 w-10 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
-              >
-                <Plus className="w-5 h-5 inline" />
-              </button>
-            )}
+          <div className="flex justify-between items-center pt-4 px-4">
+            <h2 className="text-xl font-semibold text-foreground">
+              {activeTab === 'recipe' ? 'Recipes' : 'Chat'}
+            </h2>
+            <button
+              onClick={() => setRecipeDialogOpen(true)}
+              className={`h-10 w-10 text-sm font-medium rounded-md transition-colors ${activeTab === 'recipe' 
+                ? 'text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer' 
+                : 'opacity-0 cursor-default'}`}
+              disabled={activeTab !== 'recipe'}
+            >
+              <Plus className="w-5 h-5 inline" />
+            </button>
           </div>
         )}
 
