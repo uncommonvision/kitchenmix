@@ -3,19 +3,24 @@ import { useState, useRef } from 'react'
 import { useClickOutside } from '@/hooks/useClickOutside'
 import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
 import { useUserIdentity } from '@/hooks/useUserIdentity'
+import { useMessagingService } from '@/hooks/useMessagingService'
+import { useParams } from 'react-router-dom'
 import type { User as UserType } from '@/types'
 
 interface UserMenuProps {
-  user: UserType | null
-  connectionState?: 'disconnected' | 'connecting' | 'connected' | 'error'
   error?: Error | null
   reconnect?: () => void
 }
 
-export default function UserMenu({ user, connectionState, error, reconnect }: UserMenuProps) {
+export default function UserMenu({ error, reconnect }: UserMenuProps) {
+  const { user, clearUser } = useUserIdentity()
+  const { id } = useParams<{ id: string }>()
+  const { connectionState } = useMessagingService({
+    uuid: id || "",
+    autoConnect: !!id
+  })
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const { clearUser } = useUserIdentity()
 
   const toggleOpen = () => setIsOpen(prev => !prev)
 
