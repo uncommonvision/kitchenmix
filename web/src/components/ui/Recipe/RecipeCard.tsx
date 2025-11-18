@@ -24,14 +24,13 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   return (
     <Card
       onClick={handleClick}
-      className={`relative group cursor-pointer rounded-lg border transition-all duration-200 hover:shadow-md hover:scale-105 hover:z-10 ${isSelected
+      className={`relative group cursor-pointer rounded-lg border transition-all duration-200 hover:shadow-md hover:scale-105 hover:z-10 overflow-hidden ${isSelected
         ? 'border-ring ring-1 ring-ring bg-transparent shadow-sm'
         : 'border-border hover:border-primary/50'
         }`}
     >
-      <CardContent className="p-0">
-        {/* Recipe Image */}
-        <div className="mb-3 h-32 w-full rounded-md bg-muted overflow-hidden">
+      <CardContent className="p-0 overflow-hidden">
+        <div className="mb-3 h-32 w-full rounded-t-md bg-muted overflow-hidden">
           {recipe.image ? (
             <img
               src={recipe.image}
@@ -51,7 +50,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           )}
         </div>
 
-        {/* Recipe Title */}
         <div className="px-4 pb-4 space-y-2">
           <h3 className="font-semibold text-foreground leading-tight">
             {recipe.name}
@@ -61,9 +59,9 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <ExternalLink className="h-3 w-3" />
-              <a 
-                href={recipe.url} 
-                target="_blank" 
+              <a
+                href={recipe.url}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="truncate hover:underline"
                 onClick={(e) => e.stopPropagation()}
@@ -77,8 +75,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
             </div>
           </div>
         </div>
-        
-        {/* Square Checkbox in Bottom Right Corner */}
+
         <div className="absolute bottom-2 right-2">
           <Checkbox
             checked={isSelected}

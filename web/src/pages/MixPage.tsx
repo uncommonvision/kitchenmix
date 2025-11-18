@@ -138,7 +138,7 @@ export default function MixPage() {
 
         {/* Tab Navigation */}
         {id && user && (
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-2 px-4">
             <div className="flex gap-2">
               <TabButton icon={ChefHat} tab="recipe" />
               <TabButton icon={MessageSquare} tab="messaging" />
