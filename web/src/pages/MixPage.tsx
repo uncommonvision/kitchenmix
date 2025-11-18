@@ -159,7 +159,7 @@ export default function MixPage() {
             )}
             
             {activeTab === 'grocerylist' && (
-              <div className="flex flex-col h-full min-h-0">
+              <div className="flex flex-col h-full min-h-0 overflow-hidden">
                 <div className="flex-1 flex items-center justify-center">
                   <p className="text-muted-foreground text-center">
                     Grocery list functionality coming soon!
