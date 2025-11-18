@@ -139,7 +139,7 @@ export default function MixPage() {
 
         {/* Tab Content */}
         {id && user && (
-          <div className="flex-1 overflow-y-auto h-full">
+          <div className="flex-1 overflow-y-auto">
             {activeTab === 'messaging' && (
               <div className="flex flex-col h-full min-h-0">
                 <MessagesList
