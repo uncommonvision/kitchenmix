@@ -141,16 +141,14 @@ export default function MixPage() {
         {id && user && (
           <div className="flex-1 overflow-y-auto h-full">
             {activeTab === 'messaging' && (
-              <div className="flex flex-col h-full min-h-0 overflow-hidden">
-                <div className="flex-1 overflow-y-auto">
-                  <MessagesList
-                    messages={messages}
-                    currentUser={user}
-                    showInput={true}
-                    onMessageSubmit={handleMessageSubmit}
-                    inputPlaceholder="Type a message..."
-                  />
-                </div>
+              <div className="flex flex-col h-full min-h-0">
+                <MessagesList
+                  messages={messages}
+                  currentUser={user}
+                  showInput={true}
+                  onMessageSubmit={handleMessageSubmit}
+                  inputPlaceholder="Type a message..."
+                />
               </div>
             )}
 
@@ -162,12 +160,10 @@ export default function MixPage() {
             
             {activeTab === 'grocerylist' && (
               <div className="flex flex-col h-full min-h-0">
-                <div className="flex-1 overflow-y-auto">
-                  <div className="h-full flex items-center justify-center">
-                    <p className="text-muted-foreground text-center">
-                      Grocery list functionality coming soon!
-                    </p>
-                  </div>
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-muted-foreground text-center">
+                    Grocery list functionality coming soon!
+                  </p>
                 </div>
               </div>
             )}
