@@ -39,7 +39,7 @@ export default function MessageSubmission({
   }
 
   return (
-    <div>
+    <div className="px-4">
       <form onSubmit={handleSubmit}>
         <div className="grid">
           <textarea
