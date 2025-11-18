@@ -141,7 +141,7 @@ export default function MixPage() {
         {id && user && (
           <div className="flex-1 overflow-y-auto">
             {activeTab === 'messaging' && (
-              <div className="h-full flex flex-col">
+              <div className="flex flex-col h-full min-h-0">
                 <MessagesList
                   messages={messages}
                   currentUser={user}
@@ -155,6 +155,18 @@ export default function MixPage() {
             {activeTab === 'recipe' && (
               <RecipeList
               />
+            )}
+            
+            {activeTab === 'grocerylist' && (
+              <div className="flex flex-col h-full min-h-0">
+                <div className="flex-1 overflow-y-auto">
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-muted-foreground text-center">
+                      Grocery list functionality coming soon!
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
