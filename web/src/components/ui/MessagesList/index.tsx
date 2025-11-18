@@ -48,7 +48,7 @@ export default function MessagesList({
 
   return (
     <div className="grid grid-rows-[1fr_auto] h-full min-h-0">
-      <div className="pr-2">
+      <div className="overflow-y-auto pr-2">
         <div className="flex flex-col gap-4 pb-4">
           {messages.map((message) => (
             <MessageItem
