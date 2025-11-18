@@ -1,8 +1,7 @@
 import { useParams } from 'react-router-dom'
-import { ChefHat, MessageSquare, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useMessagingService } from '@/hooks/useMessagingService'
 import { useUserIdentity } from '@/hooks/useUserIdentity'
-import { useKeydownShortcut } from '@/hooks/useKeydownShortcut'
 import { useToastService } from '@/services/toastService'
 import { useRecipeContext } from '@/contexts/RecipeContext'
 import { useNavigationContext } from '@/contexts/NavigationContext'
@@ -20,7 +19,7 @@ import type { Recipe } from '@/types/websocket'
 export default function MixPage() {
   const { id } = useParams<{ id: string }>()
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const { activeTab, setActiveTab } = useNavigationContext()
+  const { activeTab } = useNavigationContext()
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const { user, setUser } = useUserIdentity()
   const { addRecipe } = useRecipeContext()
@@ -105,17 +104,15 @@ export default function MixPage() {
     setUser(name)
   }
 
-  const toggleActiveTab = () => {
-    setActiveTab(activeTab === 'messaging' ? 'recipe' : 'messaging')
+  const sectionName = () => {
+    if (activeTab === 'recipe') {
+      return "Recipes"
+    } else if (activeTab === 'messaging') {
+      return "Chat"
+    } else if (activeTab === 'grocerylist') {
+      return "Grocery List"
+    }
   }
-
-  // Tab navigation hotkeys
-  useKeydownShortcut(
-    { key: 'Tab' },
-    () => toggleActiveTab(),
-    'Toggle between Tabs',
-    'Press TAB to switch between tabs'
-  )
 
   return (
     <MixLayout>
@@ -126,12 +123,12 @@ export default function MixPage() {
         {id && user && (
           <div className="flex justify-between items-center pt-4 px-4">
             <h2 className="text-xl font-semibold text-foreground">
-              {activeTab === 'recipe' ? 'Recipes' : 'Chat'}
+              {sectionName()}
             </h2>
             <button
               onClick={() => setRecipeDialogOpen(true)}
-              className={`h-10 w-10 text-sm font-medium rounded-md transition-colors ${activeTab === 'recipe' 
-                ? 'text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer' 
+              className={`h-10 w-10 text-sm font-medium rounded-md transition-colors ${activeTab === 'recipe'
+                ? 'text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer'
                 : 'opacity-0 cursor-default'}`}
               disabled={activeTab !== 'recipe'}
             >
